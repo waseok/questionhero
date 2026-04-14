@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+body {
+  margin: 0;
+  font-family: "Pretendard", "Noto Sans KR", system-ui, -apple-system, sans-serif;
+  background: #f4f7ff;
+  color: #111827;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.step-fade {
+  animation: stepFadeIn 0.28s ease-out;
+}
+
+.coin-pop {
+  position: absolute;
+  bottom: 8px;
+  font-size: 20px;
+  animation: coinPop 0.9s ease-out forwards;
+  opacity: 0;
+}
+
+.dice-roll-spin {
+  animation: diceRollSpin 0.45s linear infinite;
+}
+
+.token-shuffle {
+  animation: tokenShuffle 0.25s ease-in-out infinite alternate;
+}
+
+.dice-action-board {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dice-action-board:active {
+  transform: scale(0.985);
+}
+
+.dice-shake {
+  animation: diceShake 0.25s linear infinite;
+}
+
+@keyframes stepFadeIn {
+  from {
+    transform: translateY(6px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes coinPop {
+  0% {
+    transform: translateY(0) scale(0.8);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-22px) scale(1.15);
+    opacity: 0;
+  }
+}
+
+@keyframes diceRollSpin {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.2);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+@keyframes tokenShuffle {
+  from {
+    transform: translateX(-2px);
+    opacity: 0.7;
+  }
+  to {
+    transform: translateX(2px);
+    opacity: 1;
+  }
+}
+
+@keyframes diceShake {
+  0% {
+    transform: translateX(-3px) rotate(-1deg);
+  }
+  50% {
+    transform: translateX(3px) rotate(1deg);
+  }
+  100% {
+    transform: translateX(-3px) rotate(-1deg);
+  }
+}
