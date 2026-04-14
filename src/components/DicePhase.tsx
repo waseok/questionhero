@@ -86,17 +86,6 @@ export function DicePhase() {
         </div>
       ) : (
         <div className="space-y-5">
-          <button
-            className={`dice-action-board w-full rounded-xl border-2 border-dashed border-indigo-300 bg-indigo-50 px-4 py-6 text-center ${isShaking ? "dice-shake" : ""} ${isRolling ? "animate-pulse" : ""}`}
-            onMouseDown={() => !rollLocked && setIsShaking(true)}
-            onMouseUp={() => setIsShaking(false)}
-            onMouseLeave={() => setIsShaking(false)}
-            onClick={handlePhysicalRoll}
-            disabled={isRolling || rollLocked}
-          >
-            <p className="text-base font-bold">🖐️ 주사위 판을 탭해서 직접 굴리기</p>
-            <p className="mt-1 text-sm text-slate-600">{isRolling ? "드럼롤..." : rollLocked ? "결과가 고정되었습니다" : "클릭 시 테마 기반 강제 랜덤"}</p>
-          </button>
           {(["blue", "red", "yellow"] as DiceColor[]).map((color) => {
             const items = DICE_DATA[color][themeIndex[color]];
             return (
