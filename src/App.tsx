@@ -20,8 +20,17 @@ function App() {
   return (
     <main className="mx-auto min-h-screen max-w-6xl px-4 pb-10 pt-4 md:px-6 md:pb-14 md:pt-6">
       <header className="game-header sticky top-0 z-10 mb-5 p-4 md:mb-6 md:p-5">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <p className="game-title text-2xl tracking-wide text-amber-100 drop-shadow-[0_2px_4px_rgba(0,0,0,0.45)] md:text-3xl">질문 히어로</p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="m-0 min-w-0 shrink">
+            <img
+              src="/logo-question-hero.png"
+              alt="질문 히어로"
+              width={280}
+              height={120}
+              decoding="async"
+              className="h-11 w-auto max-w-[min(100%,220px)] object-contain object-left drop-shadow-[0_2px_6px_rgba(0,0,0,0.35)] md:h-14 md:max-w-[min(100%,280px)]"
+            />
+          </h1>
           <span className="rounded-full border border-amber-400/40 bg-black/20 px-3 py-1 text-xs font-bold text-amber-100/95">
             라운드 {currentRound}/{TOTAL_GAME_ROUNDS}
           </span>

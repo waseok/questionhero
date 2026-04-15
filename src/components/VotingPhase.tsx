@@ -2,8 +2,8 @@ import { useGameStore } from "../store/gameStore";
 import { QUESTION_PROMPTS } from "../constants/questionTokens";
 import { QuestionTokenBadge } from "./QuestionTokenBadge";
 
-/** 질문 가이드용 정적 카드 — 나중에 디자인한 PNG/SVG로 `public/` 경로만 바꿔 끼우면 됩니다. */
-const QUESTION_GUIDE_CARD_SRC = "/question-guide-card.svg";
+/** SAFE 게임 질문 가이드 카드 (디자인 이미지, `public/question-guide-safe-card.png`) */
+const QUESTION_GUIDE_CARD_SRC = "/question-guide-safe-card.png";
 
 export function VotingPhase() {
   const players = useGameStore((s) => s.players);
@@ -56,19 +56,16 @@ export function VotingPhase() {
           })}
         </div>
 
-        <aside className="shrink-0 lg:sticky lg:top-24 lg:w-[min(100%,280px)]">
-          <div className="overflow-hidden rounded-2xl border-2 border-[var(--game-wood)]/25 bg-amber-50/40 shadow-md">
+        <aside className="shrink-0 lg:sticky lg:top-24 lg:w-[min(100%,360px)]">
+          <div className="overflow-hidden rounded-2xl border-2 border-[var(--game-wood)]/25 bg-white/90 shadow-md">
             <img
               src={QUESTION_GUIDE_CARD_SRC}
-              alt="질문 가이드 카드 — 디자인 이미지로 교체 예정"
-              width={320}
-              height={440}
-              className="mx-auto block h-auto w-full max-w-[280px] object-contain"
+              alt="SAFE 게임 질문 가이드 — 확인·원인·판단 질문 안내"
+              width={720}
+              height={1280}
+              className="mx-auto block h-auto w-full max-w-[min(100%,340px)] object-contain"
               loading="lazy"
             />
-            <p className="border-t border-[var(--game-wood)]/15 px-3 py-2 text-center text-[11px] font-medium leading-snug text-[var(--game-ink-soft)]">
-              질문 작성 팁 카드 자리입니다. 준비한 이미지를 `public`에 두고 위 경로만 바꿔 주세요.
-            </p>
           </div>
         </aside>
       </div>
