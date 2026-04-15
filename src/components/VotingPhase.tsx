@@ -1,11 +1,9 @@
 import { useGameStore } from "../store/gameStore";
-import type { QuestionType } from "../types/game";
+import { QUESTION_PROMPTS } from "../constants/questionTokens";
+import { QuestionTokenBadge } from "./QuestionTokenBadge";
 
-const questionPrompt: Record<QuestionType, string> = {
-  confirm: "무엇을? 누가? 어디서?",
-  cause: "왜? 어쩌다가?",
-  decision: "만약 ~라면? 어떻게?",
-};
+/** 질문 가이드용 정적 카드 — 나중에 디자인한 PNG/SVG로 `public/` 경로만 바꿔 끼우면 됩니다. */
+const QUESTION_GUIDE_CARD_SRC = "/question-guide-card.svg";
 
 export function VotingPhase() {
   const players = useGameStore((s) => s.players);
@@ -19,32 +17,62 @@ export function VotingPhase() {
   return (
     <section className="game-card space-y-4 p-6 md:p-7">
       <h2 className="game-title text-2xl text-[var(--game-ink)]">대답 & 투표</h2>
-      {picks.map((pick, idx) => {
-        const playerName = players.find((p) => p.id === pick.playerId)?.name ?? pick.playerId;
-        return (
-          <div key={pick.playerId} className="rounded-xl border-2 border-[var(--game-wood)]/18 bg-white/50 p-4 shadow-inner">
-            <p className="font-bold text-[var(--game-ink)]">
-              Q{idx + 1} · {playerName}
-            </p>
-            <p className="mt-1 text-sm font-medium text-[var(--game-ink-soft)]">{questionPrompt[pick.type]}</p>
-            <textarea
-              className="mt-3 min-h-[88px] w-full rounded-xl border-2 border-[var(--game-wood)]/25 bg-white/90 p-3 text-sm text-[var(--game-ink)] outline-none ring-amber-400/25 focus:border-amber-500/50 focus:ring-2"
-              placeholder="스토리텔러 답변 입력"
-              value={pick.answer}
-              onChange={(e) => setAnswer(pick.playerId, e.target.value)}
+      <p className="text-sm font-medium text-[var(--game-ink-soft)]">각 플레이어는 배정된 질문 토큰 유형에 맞춰 스토리텔러에게 질문을 적습니다.</p>
+
+      {/* 넓은 화면: 질문 입력(왼쪽) + 가이드 카드(오른쪽 고정 느낌) */}
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
+        <div className="min-w-0 flex-1 space-y-4">
+          {picks.map((pick, idx) => {
+            const playerName = players.find((p) => p.id === pick.playerId)?.name ?? pick.playerId;
+            return (
+              <div key={pick.playerId} className="rounded-xl border-2 border-[var(--game-wood)]/18 bg-white/50 p-4 shadow-inner">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="font-bold text-[var(--game-ink)]">
+                      Q{idx + 1} · {playerName}
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-[var(--game-ink-soft)]">{QUESTION_PROMPTS[pick.type]}</p>
+                  </div>
+                  {/* 이 플레이어에게 배정된 토큰을 항상 눈에 띄게 */}
+                  <QuestionTokenBadge type={pick.type} size="sm" />
+                </div>
+                <textarea
+                  className="mt-3 min-h-[88px] w-full rounded-xl border-2 border-[var(--game-wood)]/25 bg-white/90 p-3 text-sm text-[var(--game-ink)] outline-none ring-amber-400/25 focus:border-amber-500/50 focus:ring-2"
+                  placeholder="스토리텔러에게 할 질문을 입력하세요"
+                  value={pick.answer}
+                  onChange={(e) => setAnswer(pick.playerId, e.target.value)}
+                />
+                <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm font-semibold text-[var(--game-ink)]">
+                  <input
+                    type="radio"
+                    className="h-4 w-4 accent-amber-600"
+                    checked={winner === pick.playerId}
+                    onChange={() => setWinnerPlayer(pick.playerId)}
+                  />
+                  가장 도움이 된 질문으로 선택
+                </label>
+              </div>
+            );
+          })}
+        </div>
+
+        <aside className="shrink-0 lg:sticky lg:top-24 lg:w-[min(100%,280px)]">
+          <div className="overflow-hidden rounded-2xl border-2 border-[var(--game-wood)]/25 bg-amber-50/40 shadow-md">
+            <img
+              src={QUESTION_GUIDE_CARD_SRC}
+              alt="질문 가이드 카드 — 디자인 이미지로 교체 예정"
+              width={320}
+              height={440}
+              className="mx-auto block h-auto w-full max-w-[280px] object-contain"
+              loading="lazy"
             />
-            <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm font-semibold text-[var(--game-ink)]">
-              <input
-                type="radio"
-                className="h-4 w-4 accent-amber-600"
-                checked={winner === pick.playerId}
-                onChange={() => setWinnerPlayer(pick.playerId)}
-              />
-              가장 도움이 된 질문으로 선택
-            </label>
+            <p className="border-t border-[var(--game-wood)]/15 px-3 py-2 text-center text-[11px] font-medium leading-snug text-[var(--game-ink-soft)]">
+              질문 작성 팁 카드 자리입니다. 준비한 이미지를 `public`에 두고 위 경로만 바꿔 주세요.
+            </p>
           </div>
-        );
-      })}
+        </aside>
+      </div>
+
       <button type="button" className="game-btn-cta" disabled={!ready} onClick={completeVotingStep}>
         투표 완료
       </button>

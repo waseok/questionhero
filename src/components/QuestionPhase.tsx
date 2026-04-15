@@ -1,12 +1,6 @@
 import { useGameStore } from "../store/gameStore";
 import { useState } from "react";
-import type { QuestionType } from "../types/game";
-
-const tokenLabels: Record<QuestionType, string> = {
-  confirm: "🔍 확인 질문",
-  cause: "🧩 원인 질문",
-  decision: "⚖️ 판단 질문",
-};
+import { QuestionTokenBadge } from "./QuestionTokenBadge";
 
 export function QuestionPhase() {
   const [isAssigning, setIsAssigning] = useState(false);
@@ -17,6 +11,7 @@ export function QuestionPhase() {
   const randomizeQuestionTokens = useGameStore((s) => s.randomizeQuestionTokens);
   const completeQuestionsStep = useGameStore((s) => s.completeQuestionsStep);
   const canNext = picks.length === 3 && questionTokensAssigned;
+
   const handleRandomize = () => {
     if (questionTokensAssigned || isAssigning) return;
     setIsAssigning(true);
@@ -47,21 +42,29 @@ export function QuestionPhase() {
       >
         {isAssigning ? "🎲 질문 토큰 배정 중..." : questionTokensAssigned ? "✅ 토큰 배정 완료" : "🎲 질문 토큰 무작위 뽑기"}
       </button>
-      {picks.map((pick) => {
-        const playerName = players.find((p) => p.id === pick.playerId)?.name ?? pick.playerId;
-        return (
-          <div key={pick.playerId} className="rounded-xl border-2 border-[var(--game-wood)]/18 bg-white/50 p-4 shadow-inner">
-            <p className="mb-2 font-bold text-[var(--game-ink)]">{playerName}</p>
-            <p
-              className={`rounded-lg px-3 py-2.5 text-sm font-semibold ${
-                isAssigning ? "token-shuffle bg-indigo-100/80 text-indigo-950" : "bg-amber-50/80 text-[var(--game-ink-soft)]"
-              }`}
-            >
-              {isAssigning ? "섞는 중..." : questionTokensAssigned ? `✓ ${tokenLabels[pick.type]}` : "대기 중… (아직 배정 안 됨)"}
-            </p>
-          </div>
-        );
-      })}
+
+      {/* 플레이어마다 배정된(또는 대기 중인) 질문 토큰을 카드형 배지로 표시 */}
+      <ul className="space-y-3">
+        {picks.map((pick) => {
+          const playerName = players.find((p) => p.id === pick.playerId)?.name ?? pick.playerId;
+          const assignedType = questionTokensAssigned ? pick.type : null;
+          return (
+            <li key={pick.playerId} className="rounded-xl border-2 border-[var(--game-wood)]/18 bg-white/50 p-4 shadow-inner">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="font-bold text-[var(--game-ink)]">{playerName}</p>
+                  <p className="mt-1 text-xs font-medium text-[var(--game-ink-soft)]">받은 질문 토큰</p>
+                </div>
+                <QuestionTokenBadge type={assignedType} pending={isAssigning} size="md" />
+              </div>
+              {questionTokensAssigned && !isAssigning ? (
+                <p className="mt-2 text-xs text-[var(--game-ink-soft)]">다음 단계에서 위 토큰 유형에 맞춰 질문을 작성합니다.</p>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+
       <button type="button" className="game-btn-cta" disabled={!canNext} onClick={completeQuestionsStep}>
         배정 완료
       </button>
