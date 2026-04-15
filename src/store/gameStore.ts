@@ -20,6 +20,18 @@ const getNextStep = (round: number): GameStep => (round >= TOTAL_ROUNDS ? "game_
 const randomFrom = <T,>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
 const defaultPlayers = (): Player[] => playerIds.map((id, index) => ({ id, name: `플레이어${index + 1}` }));
 
+/** 질문 유형 3종 — 스토리텔러 제외 3명에게 각각 하나씩만 배정 */
+const QUESTION_TYPES_UNIQUE: QuestionType[] = ["confirm", "cause", "decision"];
+
+function shuffledQuestionTypes(): QuestionType[] {
+  const arr = [...QUESTION_TYPES_UNIQUE];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j]!, arr[i]!];
+  }
+  return arr;
+}
+
 interface GameState {
   players: Player[];
   gameMode: GameMode;
@@ -67,7 +79,7 @@ const initialState = () => ({
   themeIndex: { blue: 0, red: 0, yellow: 0 },
   diceSelection: {},
   situation: "",
-  questionTokens: { confirm: 2, cause: 2, decision: 2 },
+  questionTokens: { confirm: 1, cause: 1, decision: 1 },
   questionPicks: [] as QuestionPick[],
   questionTokensAssigned: false,
   winnerPlayerId: undefined as string | undefined,
@@ -91,7 +103,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       situation: "",
       questionPicks: [],
       questionTokensAssigned: false,
-      questionTokens: { confirm: 2, cause: 2, decision: 2 },
+      questionTokens: { confirm: 1, cause: 1, decision: 1 },
       winnerPlayerId: undefined,
       roundHistory: [],
       diceSelection: {},
@@ -131,49 +143,36 @@ export const useGameStore = create<GameState>((set, get) => ({
       .map((p) => ({ playerId: p.id, type: "confirm" as QuestionType, answer: "" }));
     set({
       questionPicks: picks,
-      questionTokens: { confirm: 2, cause: 2, decision: 2 },
+      questionTokens: { confirm: 1, cause: 1, decision: 1 },
       questionTokensAssigned: false,
       step: "questions",
     });
   },
+  /** 같은 유형이 두 명에게 가지 않도록, 목표 유형을 가진 다른 플레이어와 맞교환만 허용 */
   pickQuestionToken: (playerId, type) =>
     set((state) => {
-      const current = state.questionPicks.find((q) => q.playerId === playerId);
-      if (!current) return state;
-      if (current.type === type) return state;
-      if (state.questionTokens[type] <= 0) return state;
+      const me = state.questionPicks.find((q) => q.playerId === playerId);
+      if (!me || me.type === type) return state;
+      const partner = state.questionPicks.find((q) => q.playerId !== playerId && q.type === type);
+      if (!partner) return state;
       return {
-        questionTokens: {
-          ...state.questionTokens,
-          [current.type]: state.questionTokens[current.type] + 1,
-          [type]: state.questionTokens[type] - 1,
-        },
-        questionPicks: state.questionPicks.map((q) => (q.playerId === playerId ? { ...q, type } : q)),
+        questionPicks: state.questionPicks.map((q) => {
+          if (q.playerId === playerId) return { ...q, type };
+          if (q.playerId === partner.playerId) return { ...q, type: me.type };
+          return q;
+        }),
       };
     }),
+  /** 확인·원인·판단을 스토리텔러 제외 3명에게 유형당 정확히 1번씩 무작위 배정 */
   randomizeQuestionTokens: () =>
     set((state) => {
-      const pool: QuestionType[] = ["confirm", "confirm", "cause", "cause", "decision", "decision"];
-      const randomized = state.questionPicks.map((pick) => {
-        const idx = Math.floor(Math.random() * pool.length);
-        const [type] = pool.splice(idx, 1);
-        return { ...pick, type };
-      });
-      const used = randomized.reduce(
-        (acc, pick) => {
-          acc[pick.type] += 1;
-          return acc;
-        },
-        { confirm: 0, cause: 0, decision: 0 } as Record<QuestionType, number>,
-      );
+      const picks = state.questionPicks;
+      const types = shuffledQuestionTypes();
+      const randomized = picks.map((pick, i) => ({ ...pick, type: types[i]! }));
       return {
         questionPicks: randomized,
         questionTokensAssigned: true,
-        questionTokens: {
-          confirm: 2 - used.confirm,
-          cause: 2 - used.cause,
-          decision: 2 - used.decision,
-        },
+        questionTokens: { confirm: 0, cause: 0, decision: 0 },
       };
     }),
   completeQuestionsStep: () => set({ step: "voting" }),
@@ -204,7 +203,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       questionTokensAssigned: false,
       winnerPlayerId: undefined,
       diceSelection: {},
-      questionTokens: { confirm: 2, cause: 2, decision: 2 },
+      questionTokens: { confirm: 1, cause: 1, decision: 1 },
       themeIndex: {
         blue: Math.floor(Math.random() * DICE_DATA.blue.length),
         red: Math.floor(Math.random() * DICE_DATA.red.length),

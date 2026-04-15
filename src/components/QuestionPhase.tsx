@@ -30,7 +30,14 @@ export function QuestionPhase() {
     <section className="game-card space-y-4 p-6 md:p-7">
       <h2 className="game-title text-2xl text-[var(--game-ink)]">질문 토큰 배정</h2>
       <div className="rounded-xl border-2 border-[var(--game-wood)]/20 bg-amber-50/70 p-3 text-sm font-semibold text-[var(--game-wood)]">
-        남은 토큰 · 확인 {tokens.confirm} / 원인 {tokens.cause} / 판단 {tokens.decision}
+        {questionTokensAssigned ? (
+          <>배정 완료: 확인·원인·판단이 플레이어당 한 번씩만 나갔습니다.</>
+        ) : (
+          <>
+            배정 전 재고 · 확인 {tokens.confirm} / 원인 {tokens.cause} / 판단 {tokens.decision}
+            <span className="mt-1 block text-xs font-medium text-[var(--game-ink-soft)]">무작위 뽑기 시 세 유형이 중복 없이 한 명씩 배정됩니다.</span>
+          </>
+        )}
       </div>
       <button
         type="button"
