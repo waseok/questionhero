@@ -1,14 +1,203 @@
 @import "tailwindcss";
 
+/* 보드게임 느낌: 잉크·양피·목재 톤 (삽화 없이도 «판» 위에 올린 느낌) */
+:root {
+  --game-ink: #1c1410;
+  --game-ink-soft: #3d342e;
+  --game-parchment-top: #fffef9;
+  --game-parchment-bot: #ebe0d2;
+  --game-wood: #4a3428;
+  --game-gold: #e8c547;
+  --game-gold-dim: #9a7b2e;
+  --game-ruby: #b91c3c;
+  --game-ruby-bright: #e11d48;
+}
+
 body {
   margin: 0;
-  font-family: "Pretendard", "Noto Sans KR", system-ui, -apple-system, sans-serif;
-  background: #f4f7ff;
-  color: #111827;
+  font-family: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  color: var(--game-ink);
+  background-color: #120e0a;
+  background-image:
+    radial-gradient(ellipse 100% 70% at 50% -15%, rgba(90, 60, 120, 0.35) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 45% at 100% 0%, rgba(180, 120, 60, 0.12) 0%, transparent 45%),
+    radial-gradient(ellipse 50% 40% at 0% 100%, rgba(40, 80, 120, 0.15) 0%, transparent 50%),
+    linear-gradient(165deg, #1f1812 0%, #14100c 45%, #0c0a08 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
 }
 
 #root {
   min-height: 100vh;
+}
+
+/* 큰 제목만 캐주얼 폰트 — 본문은 읽기 좋은 고딕 유지 */
+.game-title {
+  font-family: "Jua", "Noto Sans KR", system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  font-weight: 400;
+}
+
+/* 메인 패널: 양피지 카드 + 금테 두른 목재 프레임 */
+.game-card {
+  border-radius: 1.125rem;
+  background: linear-gradient(168deg, var(--game-parchment-top) 0%, #f4eadc 52%, var(--game-parchment-bot) 100%);
+  color: var(--game-ink);
+  border: 3px solid var(--game-wood);
+  box-shadow:
+    0 0 0 1px rgba(232, 197, 71, 0.35),
+    0 12px 32px rgba(12, 8, 6, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+/* 상단 바: 어두운 «게임 상자» 뚜껑 */
+.game-header {
+  border-radius: 1rem;
+  background: linear-gradient(180deg, #3d2f55 0%, #261c38 42%, #181222 100%);
+  color: #fdf6e3;
+  border: 3px solid var(--game-gold-dim);
+  box-shadow:
+    0 4px 0 #5c4520,
+    0 16px 36px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.game-header-muted {
+  color: rgba(253, 246, 227, 0.78);
+}
+
+/* 점수판: 가죽/나무 느낌 사이드 패널 */
+.game-aside {
+  border-radius: 1rem;
+  background: linear-gradient(168deg, #2c241e 0%, #1a1512 100%);
+  color: #f5ebe0;
+  border: 3px solid #5c4a3d;
+  box-shadow:
+    inset 0 0 32px rgba(0, 0, 0, 0.35),
+    0 12px 28px rgba(0, 0, 0, 0.35);
+}
+
+.game-aside-chip {
+  background: rgba(255, 250, 240, 0.06);
+  border: 1px solid rgba(232, 197, 71, 0.2);
+  border-radius: 0.625rem;
+}
+
+/* 플레이어 토큰: 펠트 동전처럼 (이니셜만 넣어도 «말» 느낌) */
+.player-token {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.8rem;
+  line-height: 1;
+  flex-shrink: 0;
+  border: 3px solid rgba(0, 0, 0, 0.28);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.4),
+    0 4px 0 rgba(0, 0, 0, 0.22);
+}
+
+.player-token--p1 {
+  background: linear-gradient(145deg, #fde68a, #f59e0b);
+  color: #422006;
+}
+.player-token--p2 {
+  background: linear-gradient(145deg, #bae6fd, #38bdf8);
+  color: #0c4a6e;
+}
+.player-token--p3 {
+  background: linear-gradient(145deg, #fbcfe8, #f472b6);
+  color: #831843;
+}
+.player-token--p4 {
+  background: linear-gradient(145deg, #bbf7d0, #34d399);
+  color: #064e3b;
+}
+
+/* `public/tokens/p1.png` 등 커스텀 말 이미지 */
+.player-token-img {
+  border-radius: 9999px;
+  object-fit: cover;
+  border: 3px solid rgba(0, 0, 0, 0.28);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.25),
+    0 4px 0 rgba(0, 0, 0, 0.2);
+  background: linear-gradient(180deg, #2a221c, #1a1512);
+}
+
+/* 주요 CTA: 두꺼운 눌림 버튼 */
+.game-btn-cta {
+  border-radius: 0.75rem;
+  font-weight: 800;
+  padding: 0.55rem 1.15rem;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(180deg, #34d399 0%, #059669 55%, #047857 100%);
+  box-shadow: 0 4px 0 #065f46, 0 8px 16px rgba(5, 95, 70, 0.35);
+  transition: transform 0.08s ease, filter 0.12s ease;
+}
+.game-btn-cta:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+.game-btn-cta:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #065f46, 0 4px 12px rgba(5, 95, 70, 0.3);
+}
+.game-btn-cta:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.game-btn-indigo {
+  border-radius: 0.75rem;
+  font-weight: 800;
+  padding: 0.55rem 1.15rem;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(180deg, #a5b4fc 0%, #4f46e5 50%, #4338ca 100%);
+  box-shadow: 0 4px 0 #312e81, 0 8px 16px rgba(49, 46, 129, 0.35);
+  transition: transform 0.08s ease, filter 0.12s ease;
+}
+.game-btn-indigo:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+.game-btn-indigo:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #312e81, 0 4px 12px rgba(49, 46, 129, 0.3);
+}
+.game-btn-indigo:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.game-btn-ruby {
+  border-radius: 0.75rem;
+  font-weight: 800;
+  padding: 0.55rem 1.15rem;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(180deg, #fb7185 0%, #dc2626 50%, #b91c1c 100%);
+  box-shadow: 0 4px 0 #7f1d1d, 0 8px 16px rgba(127, 29, 29, 0.35);
+  transition: transform 0.08s ease, filter 0.12s ease;
+}
+.game-btn-ruby:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+.game-btn-ruby:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #7f1d1d, 0 4px 12px rgba(127, 29, 29, 0.28);
+}
+.game-btn-ruby:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .step-fade {
@@ -41,6 +230,41 @@ body {
 
 .dice-shake {
   animation: diceShake 0.25s linear infinite;
+}
+
+/* 주사위 3개: 굴림 중 입체 회전 + 면 강조 */
+.dice-rack-perspective {
+  perspective: 900px;
+}
+
+.dice-cube-shell {
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.dice-cube-shell--rolling {
+  animation: diceCubeTumble 0.42s linear infinite;
+}
+
+.dice-cube-shell--rolling-delay-1 {
+  animation-delay: 0.12s;
+}
+
+.dice-cube-shell--rolling-delay-2 {
+  animation-delay: 0.24s;
+}
+
+.dice-cube-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.dice-result-pop {
+  animation: diceResultPop 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.dice-slot-blur {
+  filter: blur(0.5px);
 }
 
 @keyframes stepFadeIn {
@@ -100,5 +324,46 @@ body {
   }
   100% {
     transform: translateX(-3px) rotate(-1deg);
+  }
+}
+
+@keyframes diceCubeTumble {
+  0% {
+    transform: rotateX(-18deg) rotateY(0deg) translateZ(0);
+  }
+  50% {
+    transform: rotateX(18deg) rotateY(180deg) translateZ(6px);
+  }
+  100% {
+    transform: rotateX(-18deg) rotateY(360deg) translateZ(0);
+  }
+}
+
+@keyframes diceResultPop {
+  0% {
+    transform: scale(0.35) rotate(-12deg);
+    opacity: 0;
+  }
+  55% {
+    transform: scale(1.12) rotate(4deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dice-cube-shell--rolling {
+    animation: none;
+  }
+
+  .dice-roll-spin {
+    animation: none;
+  }
+
+  .dice-result-pop {
+    animation: none;
   }
 }

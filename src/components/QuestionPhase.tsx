@@ -27,30 +27,35 @@ export function QuestionPhase() {
   };
 
   return (
-    <section className="space-y-4 rounded-xl bg-white p-6 shadow-sm">
-      <h2 className="text-xl font-bold">질문 토큰 무작위 배정</h2>
-      <div className="rounded-lg bg-slate-50 p-3 text-sm">
+    <section className="game-card space-y-4 p-6 md:p-7">
+      <h2 className="game-title text-2xl text-[var(--game-ink)]">질문 토큰 배정</h2>
+      <div className="rounded-xl border-2 border-[var(--game-wood)]/20 bg-amber-50/70 p-3 text-sm font-semibold text-[var(--game-wood)]">
         남은 토큰 · 확인 {tokens.confirm} / 원인 {tokens.cause} / 판단 {tokens.decision}
       </div>
       <button
-        className={`rounded-lg bg-indigo-600 px-4 py-2 text-white disabled:opacity-50 ${isAssigning ? "animate-pulse" : ""}`}
+        type="button"
+        className={`game-btn-indigo ${isAssigning ? "animate-pulse" : ""}`}
         onClick={handleRandomize}
         disabled={questionTokensAssigned || isAssigning}
       >
-        {isAssigning ? "🎲 질문 토큰 배정 중..." : questionTokensAssigned ? "✅ 토큰 배정 완료" : "🎲 질문 토큰 무작위 뽑기 (강제)"}
+        {isAssigning ? "🎲 질문 토큰 배정 중..." : questionTokensAssigned ? "✅ 토큰 배정 완료" : "🎲 질문 토큰 무작위 뽑기"}
       </button>
       {picks.map((pick) => {
         const playerName = players.find((p) => p.id === pick.playerId)?.name ?? pick.playerId;
         return (
-          <div key={pick.playerId} className="rounded-lg border p-3">
-            <p className="mb-2 font-semibold">{playerName}</p>
-            <p className={`rounded px-3 py-2 text-sm ${isAssigning ? "token-shuffle bg-indigo-50" : "bg-slate-50"}`}>
-              {isAssigning ? "섞는 중..." : questionTokensAssigned ? `✓ ${tokenLabels[pick.type]}` : "대기 중... (아직 배정 안됨)"}
+          <div key={pick.playerId} className="rounded-xl border-2 border-[var(--game-wood)]/18 bg-white/50 p-4 shadow-inner">
+            <p className="mb-2 font-bold text-[var(--game-ink)]">{playerName}</p>
+            <p
+              className={`rounded-lg px-3 py-2.5 text-sm font-semibold ${
+                isAssigning ? "token-shuffle bg-indigo-100/80 text-indigo-950" : "bg-amber-50/80 text-[var(--game-ink-soft)]"
+              }`}
+            >
+              {isAssigning ? "섞는 중..." : questionTokensAssigned ? `✓ ${tokenLabels[pick.type]}` : "대기 중… (아직 배정 안 됨)"}
             </p>
           </div>
         );
       })}
-      <button className="rounded-lg bg-emerald-600 px-4 py-2 text-white disabled:opacity-40" disabled={!canNext} onClick={completeQuestionsStep}>
+      <button type="button" className="game-btn-cta" disabled={!canNext} onClick={completeQuestionsStep}>
         배정 완료
       </button>
     </section>

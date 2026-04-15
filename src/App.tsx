@@ -18,21 +18,33 @@ function App() {
   const storyteller = players.find((p) => p.id === storytellerId)?.name ?? storytellerId;
 
   return (
-    <main className="mx-auto min-h-screen max-w-6xl p-4 md:p-6">
-      <header className="sticky top-0 z-10 mb-4 rounded-xl bg-slate-900 p-4 text-white shadow-sm">
-        <p className="text-lg font-bold">🎮 질문 히어로</p>
-        <p className="text-sm">
-          라운드 {currentRound}/{TOTAL_GAME_ROUNDS} · 스토리텔러: {storyteller}
+    <main className="mx-auto min-h-screen max-w-6xl px-4 pb-10 pt-4 md:px-6 md:pb-14 md:pt-6">
+      <header className="game-header sticky top-0 z-10 mb-5 p-4 md:mb-6 md:p-5">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <p className="game-title text-2xl tracking-wide text-amber-100 drop-shadow-[0_2px_4px_rgba(0,0,0,0.45)] md:text-3xl">질문 히어로</p>
+          <span className="rounded-full border border-amber-400/40 bg-black/20 px-3 py-1 text-xs font-bold text-amber-100/95">
+            라운드 {currentRound}/{TOTAL_GAME_ROUNDS}
+          </span>
+        </div>
+        <p className="mt-2 text-sm font-semibold text-amber-50/95">
+          스토리텔러: <span className="text-white">{storyteller}</span>
         </p>
         {step !== "setup" && (
-          <p className="mt-2 text-xs text-slate-200">
-            상황: {diceSelection.blue?.icon} {diceSelection.blue?.label} | {diceSelection.red?.icon} {diceSelection.red?.label} | {diceSelection.yellow?.icon} {diceSelection.yellow?.label}
-            {situation ? ` | "${situation}"` : ""}
+          <p className="game-header-muted mt-3 border-t border-white/10 pt-3 text-xs leading-relaxed">
+            <span className="font-semibold text-amber-200/90">상황 카드</span>{" "}
+            {diceSelection.blue?.icon} {diceSelection.blue?.label} · {diceSelection.red?.icon} {diceSelection.red?.label} · {diceSelection.yellow?.icon}{" "}
+            {diceSelection.yellow?.label}
+            {situation ? (
+              <>
+                {" "}
+                → <span className="text-amber-50/95">「{situation}」</span>
+              </>
+            ) : null}
           </p>
         )}
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
+      <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
         <section key={step} className="step-fade">
           {step === "setup" && <SetupScreen />}
           {step === "dice" && <DicePhase />}

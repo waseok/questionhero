@@ -7,17 +7,18 @@ export function StoryPhase() {
   const canNext = situation.trim().length > 0 && situation.length <= 150;
 
   return (
-    <section className="space-y-4 rounded-xl bg-white p-6 shadow-sm">
-      <h2 className="text-xl font-bold">이야기 만들기 (최대 150자)</h2>
+    <section className="game-card space-y-4 p-6 md:p-7">
+      <h2 className="game-title text-2xl text-[var(--game-ink)]">이야기 만들기</h2>
+      <p className="text-sm font-medium text-[var(--game-ink-soft)]">주사위로 나온 조각을 이어 최대 150자까지 적어 보세요.</p>
       <textarea
-        className="h-40 w-full rounded-lg border p-3"
+        className="h-40 w-full resize-y rounded-xl border-2 border-[var(--game-wood)]/25 bg-white/90 p-4 text-[var(--game-ink)] shadow-inner outline-none ring-amber-400/25 focus:border-amber-500/50 focus:ring-2"
         value={situation}
         onChange={(e) => setSituation(e.target.value)}
-        placeholder="3문장 이내로 위기 상황을 입력하세요."
+        placeholder="예: 복도 끝에서… (3문장 이내)"
       />
-      <p className="text-sm text-slate-600">글자 수: {situation.length} / 150</p>
-      <button className="rounded-lg bg-emerald-600 px-4 py-2 text-white disabled:opacity-40" disabled={!canNext} onClick={completeStoryStep}>
-        다음
+      <p className="text-sm font-semibold text-[var(--game-wood)]">글자 수: {situation.length} / 150</p>
+      <button type="button" className="game-btn-cta" disabled={!canNext} onClick={completeStoryStep}>
+        다음 단계
       </button>
     </section>
   );
