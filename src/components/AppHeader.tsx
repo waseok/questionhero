@@ -53,15 +53,20 @@ export function AppHeader({ variant }: Props) {
             }
           />
         </h1>
-        <div className="flex flex-wrap items-center gap-2">
+      </div>
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+        <p className={`text-sm font-semibold md:text-base ${isDark ? "text-amber-50/95" : "text-stone-800"}`}>
+          스토리텔러: <span className={isDark ? "text-white" : "text-blue-900"}>{storyteller}</span>
+        </p>
+        <div className="flex flex-wrap items-center gap-2.5">
           {kind === "online" && roomCode ? (
             <button
               type="button"
               onClick={() => void copyCode()}
               className={
                 isDark
-                  ? "rounded-full border border-amber-400/50 bg-black/25 px-3 py-1 text-xs font-bold text-amber-100"
-                  : "rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-bold text-blue-900"
+                  ? "rounded-full border border-amber-400/55 bg-black/25 px-4 py-2 text-sm font-extrabold text-amber-100 md:px-5 md:text-base"
+                  : "rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-extrabold text-blue-900 md:px-5 md:text-base"
               }
             >
               방 {roomCode} · 복사
@@ -76,8 +81,8 @@ export function AppHeader({ variant }: Props) {
               onClick={handleLeave}
               className={
                 isDark
-                  ? "rounded-lg border border-white/20 bg-white/10 px-2.5 py-1 text-xs font-bold text-amber-50 hover:bg-white/15"
-                  : "rounded-lg border border-stone-300 bg-stone-100 px-2.5 py-1 text-xs font-bold text-stone-800 hover:bg-stone-200"
+                  ? "rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-extrabold text-amber-50 hover:bg-white/15 md:px-5 md:text-base"
+                  : "rounded-xl border border-stone-300 bg-stone-100 px-4 py-2 text-sm font-extrabold text-stone-800 hover:bg-stone-200 md:px-5 md:text-base"
               }
             >
               처음으로
@@ -86,17 +91,14 @@ export function AppHeader({ variant }: Props) {
           <span
             className={
               isDark
-                ? "rounded-full border border-amber-400/40 bg-black/20 px-3 py-1 text-xs font-bold text-amber-100/95"
-                : "rounded-full border border-amber-400/60 bg-amber-50 px-3 py-1 text-xs font-bold text-amber-950"
+                ? "rounded-full border border-amber-400/45 bg-black/20 px-4 py-2 text-sm font-extrabold text-amber-100/95 md:px-5 md:text-base"
+                : "rounded-full border border-amber-400/60 bg-amber-50 px-4 py-2 text-sm font-extrabold text-amber-950 md:px-5 md:text-base"
             }
           >
             라운드 {currentRound}/{TOTAL_GAME_ROUNDS}
           </span>
         </div>
       </div>
-      <p className={`mt-2 text-sm font-semibold ${isDark ? "text-amber-50/95" : "text-stone-800"}`}>
-        스토리텔러: <span className={isDark ? "text-white" : "text-blue-900"}>{storyteller}</span>
-      </p>
       {step !== "setup" && (
         <p
           className={`mt-3 border-t pt-3 text-xs leading-relaxed ${isDark ? "game-header-muted border-white/10" : "border-stone-200 text-stone-600"}`}
