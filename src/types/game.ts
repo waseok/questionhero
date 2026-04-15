@@ -31,3 +31,21 @@ export interface QuestionPick {
   type: QuestionType;
   answer: string;
 }
+
+/** Supabase 등으로 동기화하는 게임 상태 스냅샷 (함수 제외) */
+export interface GameSnapshot {
+  players: Player[];
+  gameMode: GameMode;
+  step: GameStep;
+  currentRound: number;
+  storytellerId: string;
+  themeIndex: Record<DiceColor, number>;
+  diceSelection: DiceSelection;
+  situation: string;
+  questionTokens: Record<QuestionType, number>;
+  questionPicks: QuestionPick[];
+  questionTokensAssigned: boolean;
+  winnerPlayerId?: string;
+  scores: Record<string, number>;
+  roundHistory: { round: number; winnerPlayerId: string; winnerCoins: number }[];
+}

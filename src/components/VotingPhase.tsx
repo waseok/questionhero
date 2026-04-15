@@ -1,5 +1,7 @@
-import { useGameStore } from "../store/gameStore";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { QUESTION_PROMPTS } from "../constants/questionTokens";
+import { useGameStore } from "../store/gameStore";
+import { PhaseCountdown } from "./PhaseCountdown";
 import { QuestionTokenBadge } from "./QuestionTokenBadge";
 
 /** SAFE 게임 질문 가이드 카드 (디자인 이미지, `public/question-guide-safe-card.png`) */
@@ -9,14 +11,41 @@ export function VotingPhase() {
   const players = useGameStore((s) => s.players);
   const picks = useGameStore((s) => s.questionPicks);
   const winner = useGameStore((s) => s.winnerPlayerId);
+  const currentRound = useGameStore((s) => s.currentRound);
   const setAnswer = useGameStore((s) => s.setAnswer);
   const setWinnerPlayer = useGameStore((s) => s.setWinnerPlayer);
   const completeVotingStep = useGameStore((s) => s.completeVotingStep);
   const ready = Boolean(winner) && picks.every((p) => p.answer.trim().length > 0);
+  const [timeUp, setTimeUp] = useState(false);
+  const readyRef = useRef(ready);
+  readyRef.current = ready;
+
+  const handleExpire = useCallback(() => {
+    if (readyRef.current) {
+      completeVotingStep();
+    } else {
+      setTimeUp(true);
+    }
+  }, [completeVotingStep]);
+
+  useEffect(() => {
+    if (ready) setTimeUp(false);
+  }, [ready]);
 
   return (
     <section className="game-card space-y-4 p-6 md:p-7">
       <h2 className="game-title text-2xl text-[var(--game-ink)]">대답 & 투표</h2>
+      <PhaseCountdown
+        resetKey={`vote-r${currentRound}`}
+        durationSec={120}
+        label="질문 작성·투표 남은 시간 (최대 2분)"
+        onExpire={handleExpire}
+      />
+      {timeUp ? (
+        <p className="rounded-xl border-2 border-rose-400/50 bg-rose-50 px-3 py-2 text-sm font-bold text-rose-900">
+          시간이 종료되었습니다. 질문을 모두 적고 투표를 마친 뒤 투표 완료를 눌러 주세요.
+        </p>
+      ) : null}
       <p className="text-sm font-medium text-[var(--game-ink-soft)]">각 플레이어는 배정된 질문 토큰 유형에 맞춰 스토리텔러에게 질문을 적습니다.</p>
 
       {/* 넓은 화면: 질문 입력(왼쪽) + 가이드 카드(오른쪽 고정 느낌) */}

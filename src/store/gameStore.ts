@@ -5,6 +5,7 @@ import type {
   DiceItem,
   DiceSelection,
   GameMode,
+  GameSnapshot,
   GameStep,
   Player,
   QuestionPick,
@@ -66,6 +67,8 @@ interface GameState {
   completeVotingStep: () => void;
   nextRound: () => void;
   resetGame: () => void;
+  /** 온라인 방에서 받은 상태로 덮어씁니다(함수 필드는 유지). */
+  applyRemoteSnapshot: (snap: GameSnapshot) => void;
 }
 
 const buildScoreMap = () => Object.fromEntries(playerIds.map((id) => [id, 0]));
@@ -212,6 +215,24 @@ export const useGameStore = create<GameState>((set, get) => ({
     });
   },
   resetGame: () => set(initialState()),
+  applyRemoteSnapshot: (snap) =>
+    set((prev) => ({
+      ...prev,
+      players: snap.players,
+      gameMode: snap.gameMode,
+      step: snap.step,
+      currentRound: snap.currentRound,
+      storytellerId: snap.storytellerId,
+      themeIndex: snap.themeIndex,
+      diceSelection: snap.diceSelection,
+      situation: snap.situation,
+      questionTokens: snap.questionTokens,
+      questionPicks: snap.questionPicks,
+      questionTokensAssigned: snap.questionTokensAssigned,
+      winnerPlayerId: snap.winnerPlayerId,
+      scores: snap.scores,
+      roundHistory: snap.roundHistory,
+    })),
 }));
 
 export const TOTAL_GAME_ROUNDS = TOTAL_ROUNDS;

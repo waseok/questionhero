@@ -1,7 +1,10 @@
 import { PlayerToken } from "./PlayerToken";
 import { useGameStore } from "../store/gameStore";
+import { useRoomStore } from "../store/roomStore";
 
 export function SetupScreen() {
+  const kind = useRoomStore((s) => s.kind);
+  const roomCode = useRoomStore((s) => s.roomCode);
   const players = useGameStore((s) => s.players);
   const gameMode = useGameStore((s) => s.gameMode);
   const setPlayerName = useGameStore((s) => s.setPlayerName);
@@ -14,6 +17,14 @@ export function SetupScreen() {
       <div>
         <h2 className="game-title text-3xl text-[var(--game-ink)] md:text-4xl">나를 구해줘!</h2>
         <p className="mt-2 text-sm font-medium text-[var(--game-ink-soft)]">SAFE 스타일 · 질문 히어로 보드</p>
+        {kind === "online" && roomCode ? (
+          <p className="mt-3 rounded-xl border border-blue-200 bg-blue-50/90 px-3 py-2 text-sm font-semibold text-blue-950">
+            같은 방에서 진행 중입니다. 방 코드 <span className="tabular-nums">{roomCode}</span>를 다른 기기에 입력하면 함께할 수 있어요.
+          </p>
+        ) : null}
+        {kind === "local" ? (
+          <p className="mt-3 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm font-semibold text-stone-700">이 기기에서만 진행하는 연습 모드입니다.</p>
+        ) : null}
       </div>
 
       <div>
