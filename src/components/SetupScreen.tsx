@@ -5,6 +5,9 @@ import { useRoomStore } from "../store/roomStore";
 export function SetupScreen() {
   const kind = useRoomStore((s) => s.kind);
   const roomCode = useRoomStore((s) => s.roomCode);
+  const myClientId = useRoomStore((s) => s.myClientId);
+  const myName = useRoomStore((s) => s.myName.trim());
+  const connectedUsers = useRoomStore((s) => s.connectedUsers);
   const players = useGameStore((s) => s.players);
   const gameMode = useGameStore((s) => s.gameMode);
   const setPlayerName = useGameStore((s) => s.setPlayerName);
@@ -18,9 +21,39 @@ export function SetupScreen() {
         <h2 className="game-title text-3xl text-[var(--game-ink)] md:text-4xl">나를 구해줘!</h2>
         <p className="mt-2 text-sm font-medium text-[var(--game-ink-soft)]">SAFE 스타일 · 질문 히어로 보드</p>
         {kind === "online" && roomCode ? (
-          <p className="mt-3 rounded-xl border border-blue-200 bg-blue-50/90 px-3 py-2 text-sm font-semibold text-blue-950">
-            같은 방에서 진행 중입니다. 방 코드 <span className="tabular-nums">{roomCode}</span>를 다른 기기에 입력하면 함께할 수 있어요.
-          </p>
+          <>
+            <p className="mt-3 rounded-xl border border-blue-200 bg-blue-50/90 px-3 py-2 text-sm font-semibold text-blue-950">
+              같은 방에서 진행 중입니다. 방 코드 <span className="tabular-nums">{roomCode}</span>를 다른 기기에 입력하면 함께할 수 있어요.
+            </p>
+            <div className="mt-2 rounded-xl border border-emerald-200 bg-emerald-50/90 px-3 py-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs font-bold uppercase tracking-wide text-emerald-900/80">현재 접속자</p>
+                <span className="rounded-full border border-emerald-300 bg-white/80 px-2 py-0.5 text-xs font-extrabold text-emerald-900">
+                  {connectedUsers.length}명
+                </span>
+              </div>
+              {connectedUsers.length > 0 ? (
+                <ul className="mt-2 flex flex-wrap gap-1.5">
+                  {connectedUsers.map((u) => {
+                    const isMe = u.clientId === myClientId || (myName.length > 0 && u.name === myName);
+                    return (
+                      <li
+                        key={`${u.clientId}-${u.name}`}
+                        className={`rounded-full border px-2 py-1 text-xs font-bold ${
+                          isMe ? "border-indigo-300 bg-indigo-100 text-indigo-900" : "border-emerald-200 bg-white/85 text-emerald-950"
+                        }`}
+                      >
+                        {isMe ? "나 · " : ""}
+                        {u.name}
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className="mt-1 text-sm font-semibold text-emerald-950">접속자 동기화 중...</p>
+              )}
+            </div>
+          </>
         ) : null}
         {kind === "local" ? (
           <p className="mt-3 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm font-semibold text-stone-700">이 기기에서만 진행하는 연습 모드입니다.</p>

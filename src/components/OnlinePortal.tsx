@@ -13,14 +13,34 @@ type StoreSlice = GameSnapshot & Record<string, unknown>;
  */
 export function OnlinePortal() {
   const [joinInput, setJoinInput] = useState("");
+  const [myNameInput, setMyNameInput] = useState("");
   const [busy, setBusy] = useState(false);
   const enterLocalPractice = useRoomStore((s) => s.enterLocalPractice);
   const enterOnlineRoom = useRoomStore((s) => s.enterOnlineRoom);
+  const setMyName = useRoomStore((s) => s.setMyName);
   const setRoomError = useRoomStore((s) => s.setRoomError);
   const roomError = useRoomStore((s) => s.roomError);
+  const myName = myNameInput.trim();
+
+  const assignSeatToName = (name: string) => {
+    const store = useGameStore.getState();
+    const players = store.players;
+    const already = players.find((p) => p.name.trim() === name);
+    if (already) return;
+    const empty = players.find((p, i) => {
+      const v = p.name.trim();
+      return !v || v === `플레이어${i + 1}`;
+    });
+    if (!empty) return;
+    store.setPlayerName(empty.id, name);
+  };
 
   const handleCreateOnline = async () => {
     setRoomError(null);
+    if (myName.length < 2) {
+      setRoomError("이름은 2자 이상 입력해 주세요.");
+      return;
+    }
     if (!isSupabaseConfigured) {
       setRoomError("Supabase 환경 변수(VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)를 설정한 뒤 다시 시도해 주세요.");
       return;
@@ -29,13 +49,15 @@ export function OnlinePortal() {
     if (!supabase) return;
     setBusy(true);
     useGameStore.getState().resetGame();
+    assignSeatToName(myName);
+    setMyName(myName);
     const snapshot = buildGameSnapshotFromStoreState(useGameStore.getState() as unknown as StoreSlice);
 
     for (let attempt = 0; attempt < 20; attempt++) {
       const code = randomRoomCode();
       const { error } = await supabase.from("rooms").insert({ code, game_state: snapshot });
       if (!error) {
-        enterOnlineRoom(code, true);
+        enterOnlineRoom(code, true, myName);
         setBusy(false);
         return;
       }
@@ -46,6 +68,10 @@ export function OnlinePortal() {
 
   const handleJoinOnline = async () => {
     setRoomError(null);
+    if (myName.length < 2) {
+      setRoomError("입장 전 이름을 2자 이상 입력해 주세요.");
+      return;
+    }
     if (!isSupabaseConfigured) {
       setRoomError("Supabase 환경 변수를 먼저 설정해 주세요.");
       return;
@@ -66,30 +92,48 @@ export function OnlinePortal() {
     }
     try {
       useGameStore.getState().applyRemoteSnapshot(data.game_state as GameSnapshot);
+      assignSeatToName(myName);
+      setMyName(myName);
     } catch {
       setRoomError("방 데이터를 읽는 데 실패했습니다.");
       setBusy(false);
       return;
     }
-    enterOnlineRoom(code, false);
+    enterOnlineRoom(code, false, myName);
     setBusy(false);
   };
 
   return (
     <div className="min-h-screen bg-white text-[var(--game-ink)]">
-      <div className="mx-auto flex max-w-lg flex-col items-center px-4 py-10 md:py-14">
-        <img
-          src="/logo-question-hero.png"
-          alt="질문 히어로"
-          width={840}
-          height={360}
-          decoding="async"
-          className="mx-auto w-[min(96vw,720px)] max-w-none select-none"
-        />
-        <p className="mt-4 text-center text-sm font-semibold text-[var(--game-ink-soft)]">온라인으로 모여 SAFE 질문 보드를 즐겨 보세요.</p>
+      <div className="mx-auto flex w-full max-w-xl flex-col items-center px-4 py-10 md:py-14">
+        <div className="flex w-full justify-center">
+          <img
+            src="/logo-question-hero.png"
+            alt="질문 히어로"
+            width={840}
+            height={360}
+            decoding="async"
+            className="mx-auto w-[min(88vw,560px)] select-none object-contain"
+          />
+        </div>
+        <p className="mt-4 w-full text-center text-sm font-semibold text-[var(--game-ink-soft)]">온라인으로 모여 SAFE 질문 보드를 즐겨 보세요.</p>
+
+        <div className="mt-7 w-full rounded-2xl border-2 border-blue-200/70 bg-blue-50/70 p-4">
+          <label className="block text-xs font-bold uppercase tracking-wide text-blue-900/80">
+            내 이름 (필수)
+            <input
+              maxLength={14}
+              placeholder="예: 민수"
+              value={myNameInput}
+              onChange={(e) => setMyNameInput(e.target.value)}
+              className="mt-1.5 w-full rounded-xl border-2 border-blue-200/70 bg-white px-3 py-2.5 text-base font-bold tracking-normal text-[var(--game-ink)] outline-none ring-blue-300/35 focus:border-blue-500/55 focus:ring-2"
+            />
+          </label>
+          <p className="mt-2 text-xs font-medium text-blue-900/70">온라인 입장 시 이 이름으로 접속자 목록에 표시됩니다.</p>
+        </div>
 
         {!isSupabaseConfigured ? (
-          <p className="mt-6 rounded-xl border-2 border-amber-500/40 bg-amber-50 px-4 py-3 text-center text-sm font-medium text-amber-950">
+          <p className="mt-6 w-full rounded-xl border-2 border-amber-500/40 bg-amber-50 px-4 py-3 text-center text-sm font-medium text-amber-950">
             Supabase URL·Anon 키가 없으면 온라인 방을 만들 수 없습니다. 프로젝트 루트에 `.env`를 만들고 `supabase/schema.sql`을 프로젝트에 적용한 뒤 Realtime을 켜 주세요.
           </p>
         ) : null}
@@ -100,10 +144,10 @@ export function OnlinePortal() {
           </p>
         ) : null}
 
-        <div className="mt-10 w-full space-y-4">
+        <div className="mt-8 w-full space-y-4">
           <button
             type="button"
-            disabled={busy}
+            disabled={busy || myName.length < 2}
             onClick={() => void handleCreateOnline()}
             className="w-full rounded-2xl border-2 border-blue-900/40 bg-gradient-to-b from-sky-500 to-blue-700 py-4 text-lg font-extrabold text-white shadow-[0_6px_0_#1e3a5f] transition enabled:hover:brightness-105 disabled:opacity-60"
           >
@@ -126,7 +170,7 @@ export function OnlinePortal() {
             </label>
             <button
               type="button"
-              disabled={busy}
+              disabled={busy || myName.length < 2}
               onClick={() => void handleJoinOnline()}
               className="game-btn-indigo mt-4 w-full py-3 text-base disabled:opacity-60"
             >

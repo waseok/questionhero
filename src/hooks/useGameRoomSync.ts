@@ -3,6 +3,7 @@ import { buildGameSnapshotFromStoreState } from "../lib/gameSnapshot";
 import { getSupabase } from "../lib/supabaseClient";
 import { useGameStore } from "../store/gameStore";
 import type { RoomConnectionKind } from "../store/roomStore";
+import { useRoomStore } from "../store/roomStore";
 import type { GameSnapshot } from "../types/game";
 
 type StoreSlice = GameSnapshot & Record<string, unknown>;
@@ -27,6 +28,18 @@ export function useGameRoomSync(roomCode: string | null, kind: RoomConnectionKin
 
     let cancelled = false;
     const channel = supabase.channel(`room_sync_${roomCode}`);
+    const roomStore = useRoomStore.getState();
+
+    const syncPresenceUsers = () => {
+      const state = channel.presenceState<{ name?: string; clientId?: string }>();
+      const flattened = Object.values(state)
+        .flat()
+        .map((p) => ({ clientId: p.clientId ?? "?", name: (p.name ?? "").trim() }))
+        .filter((u) => u.name.length > 0);
+      const uniqMap = new Map<string, { clientId: string; name: string }>();
+      for (const u of flattened) uniqMap.set(`${u.clientId}:${u.name}`, u);
+      roomStore.setConnectedUsers(Array.from(uniqMap.values()));
+    };
 
     const applyRemote = (snap: GameSnapshot) => {
       const json = JSON.stringify(snap);
@@ -57,7 +70,18 @@ export function useGameRoomSync(roomCode: string | null, kind: RoomConnectionKin
         if (row?.game_state) applyRemote(row.game_state);
       },
     );
-    void channel.subscribe();
+    channel.on("presence", { event: "sync" }, syncPresenceUsers);
+    channel.on("presence", { event: "join" }, syncPresenceUsers);
+    channel.on("presence", { event: "leave" }, syncPresenceUsers);
+    void channel.subscribe(async (status) => {
+      if (status === "SUBSCRIBED") {
+        await channel.track({
+          name: roomStore.myName || "이름없음",
+          clientId: roomStore.myClientId,
+          onlineAt: new Date().toISOString(),
+        });
+      }
+    });
 
     const unsub = useGameStore.subscribe((state) => {
       if (!pushEnabledRef.current || skipPushRef.current) return;
@@ -73,6 +97,7 @@ export function useGameRoomSync(roomCode: string | null, kind: RoomConnectionKin
       cancelled = true;
       pushEnabledRef.current = false;
       window.clearTimeout(pushTimerRef.current);
+      roomStore.setConnectedUsers([]);
       unsub();
       void supabase.removeChannel(channel);
     };
