@@ -5,6 +5,7 @@ import { useRoomStore } from "../store/roomStore";
 export function SetupScreen() {
   const kind = useRoomStore((s) => s.kind);
   const roomCode = useRoomStore((s) => s.roomCode);
+  const isHost = useRoomStore((s) => s.isHost);
   const myClientId = useRoomStore((s) => s.myClientId);
   const connectedUsers = useRoomStore((s) => s.connectedUsers);
   const players = useGameStore((s) => s.players);
@@ -13,6 +14,8 @@ export function SetupScreen() {
   const setMode = useGameStore((s) => s.setMode);
   const startGame = useGameStore((s) => s.startGame);
   const canStart = players.every((p) => p.name.trim().length > 0);
+  /** 온라인에서는 방장만 시작·모드 변경(단일 진실원) — 참가자는 DB/Realtime으로 방장 화면을 따라감 */
+  const onlineAsGuest = kind === "online" && !isHost;
 
   return (
     <section className="game-card space-y-6 p-6 md:p-8">
@@ -89,22 +92,24 @@ export function SetupScreen() {
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
+            disabled={onlineAsGuest}
             className={`rounded-xl border-2 px-4 py-2.5 text-sm font-extrabold transition ${
               gameMode === "thoughtful"
                 ? "border-blue-900/50 bg-gradient-to-b from-sky-400 to-blue-700 text-white shadow-[0_4px_0_#1e3a5f]"
                 : "border-transparent bg-black/[0.06] text-[var(--game-ink-soft)] hover:bg-black/[0.09]"
-            }`}
+            } disabled:cursor-not-allowed disabled:opacity-50`}
             onClick={() => setMode("thoughtful")}
           >
             신중한 판단
           </button>
           <button
             type="button"
+            disabled={onlineAsGuest}
             className={`rounded-xl border-2 px-4 py-2.5 text-sm font-extrabold transition ${
               gameMode === "emergency"
                 ? "border-red-900/60 bg-gradient-to-b from-rose-500 to-red-700 text-white shadow-[0_4px_0_#7f1d1d]"
                 : "border-transparent bg-black/[0.06] text-[var(--game-ink-soft)] hover:bg-black/[0.09]"
-            }`}
+            } disabled:cursor-not-allowed disabled:opacity-50`}
             onClick={() => setMode("emergency")}
           >
             긴급 대응
@@ -112,7 +117,17 @@ export function SetupScreen() {
         </div>
       </div>
 
-      <button type="button" className="game-btn-cta text-base" disabled={!canStart} onClick={startGame}>
+      {onlineAsGuest ? (
+        <p className="rounded-xl border border-amber-200 bg-amber-50/90 px-3 py-2 text-center text-sm font-semibold text-amber-950">
+          방장이「게임 시작」을 누르면 이 기기도 같은 단계로 같이 진행됩니다.
+        </p>
+      ) : null}
+      <button
+        type="button"
+        className="game-btn-cta text-base"
+        disabled={!canStart || onlineAsGuest}
+        onClick={startGame}
+      >
         게임 시작
       </button>
     </section>

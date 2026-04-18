@@ -98,9 +98,10 @@ export function useGameRoomSync(roomCode: string | null, kind: RoomConnectionKin
       if (cancelled) return;
       if (error || !data?.game_state) return;
       applyRemote(data.game_state as GameSnapshot);
-      window.setTimeout(() => {
-        pushEnabledRef.current = true;
-      }, 400);
+      /** 이전 400ms 지연은 방장이 곧바로「게임 시작」을 누를 때 푸시가 막혀 참가자 화면이 안 바뀌는 원인이 됨 */
+      queueMicrotask(() => {
+        if (!cancelled) pushEnabledRef.current = true;
+      });
     };
 
     void loadInitial();
@@ -123,7 +124,7 @@ export function useGameRoomSync(roomCode: string | null, kind: RoomConnectionKin
       pushTimerRef.current = window.setTimeout(async () => {
         if (skipPushRef.current) return;
         await supabase.from("rooms").update({ game_state: snap, updated_at: new Date().toISOString() }).eq("code", roomCode);
-      }, 380);
+      }, 200);
     });
 
     return () => {
