@@ -11,14 +11,28 @@ type StoreSlice = GameSnapshot & Record<string, unknown>;
 
 const isSubscribed = (status: string) => status === "SUBSCRIBED";
 
+/** postgres_changes와 별도로, 같은 방 클라이언트에게 즉시 스냅샷을 뿌립니다(기본 self=false → 송신자 제외). */
+const GAME_BROADCAST_EVENT = "qh_game";
+
+function readSnapFromBroadcastMessage(msg: unknown): GameSnapshot | null {
+  if (typeof msg !== "object" || msg === null) return null;
+  const m = msg as Record<string, unknown>;
+  const p = m.payload;
+  if (p && typeof p === "object") {
+    const snap = (p as Record<string, unknown>).snap;
+    if (snap && typeof snap === "object") return snap as GameSnapshot;
+  }
+  const direct = m.snap;
+  if (direct && typeof direct === "object") return direct as GameSnapshot;
+  return null;
+}
+
 /**
  * 온라인 방일 때만 Supabase `rooms` 행과 실시간 동기화합니다.
- * 로컬 연습(`kind === 'local'`) 또는 포털에서는 아무 것도 하지 않습니다.
  *
- * Presence와 postgres_changes를 **서로 다른 채널**로 분리합니다.
- * 한 채널에 둘을 같이 두면, `rooms` 테이블에 Realtime이 안 붙었거나
- * 서버 필터 검증에 실패할 때 전체 구독이 실패해 `track()`이 호출되지 않고
- * 접속자 수가 영원히 0으로 남는 문제가 생길 수 있습니다.
+ * - Presence: 접속자 목록
+ * - postgres_changes: DB 영속화 및 백업 동기화
+ * - **Broadcast**: DB 복제/필터 이슈와 무관하게 같은 방 전원에게 즉시 `game_state` 전달 (동시 진행 핵심)
  */
 export function useGameRoomSync(roomCode: string | null, kind: RoomConnectionKind) {
   const pushTimerRef = useRef(0);
@@ -38,7 +52,6 @@ export function useGameRoomSync(roomCode: string | null, kind: RoomConnectionKin
     const roomStore = useRoomStore.getState();
     const clientId = roomStore.myClientId;
 
-    /** 접속자 표시만 담당 (postgres와 독립적으로 SUBSCRIBED 보장) */
     const presenceChannel = supabase.channel(`room_presence_${roomCode}`, {
       config: {
         presence: {
@@ -78,8 +91,8 @@ export function useGameRoomSync(roomCode: string | null, kind: RoomConnectionKin
       syncPresenceUsers();
     });
 
-    /** 게임 상태 DB 변경 구독만 담당 */
     const dataChannel = supabase.channel(`room_data_${roomCode}`);
+
     const applyRemote = (snap: GameSnapshot) => {
       const json = JSON.stringify(snap);
       if (json === lastRemoteJsonRef.current) return;
@@ -87,18 +100,23 @@ export function useGameRoomSync(roomCode: string | null, kind: RoomConnectionKin
       skipPushRef.current = true;
       useGameStore.getState().applyRemoteSnapshot(snap);
       skipPushRef.current = false;
-      /** 원격이 setup 플레이어 이름을 덮은 직후, 현재 Presence 순서로 다시 맞춤 */
       if (snap.step === "setup") {
         queueMicrotask(() => syncPresenceUsers());
       }
     };
+
+    const gameBroadcastChannel = supabase.channel(`room_game_${roomCode}`);
+    gameBroadcastChannel.on("broadcast", { event: GAME_BROADCAST_EVENT }, (msg: unknown) => {
+      const snap = readSnapFromBroadcastMessage(msg);
+      if (snap) applyRemote(snap);
+    });
+    void gameBroadcastChannel.subscribe();
 
     const loadInitial = async () => {
       const { data, error } = await supabase.from("rooms").select("game_state").eq("code", roomCode).maybeSingle();
       if (cancelled) return;
       if (error || !data?.game_state) return;
       applyRemote(data.game_state as GameSnapshot);
-      /** 이전 400ms 지연은 방장이 곧바로「게임 시작」을 누를 때 푸시가 막혀 참가자 화면이 안 바뀌는 원인이 됨 */
       queueMicrotask(() => {
         if (!cancelled) pushEnabledRef.current = true;
       });
@@ -123,6 +141,16 @@ export function useGameRoomSync(roomCode: string | null, kind: RoomConnectionKin
       window.clearTimeout(pushTimerRef.current);
       pushTimerRef.current = window.setTimeout(async () => {
         if (skipPushRef.current) return;
+        /** Broadcast를 먼저 보내 참가자 화면이 DB 라운드트립을 기다리지 않게 함 */
+        try {
+          await gameBroadcastChannel.send({
+            type: "broadcast",
+            event: GAME_BROADCAST_EVENT,
+            payload: { snap },
+          });
+        } catch {
+          /* 전송 실패 시에도 DB 갱신은 시도 */
+        }
         await supabase.from("rooms").update({ game_state: snap, updated_at: new Date().toISOString() }).eq("code", roomCode);
       }, 200);
     });
@@ -135,6 +163,7 @@ export function useGameRoomSync(roomCode: string | null, kind: RoomConnectionKin
       unsub();
       void supabase.removeChannel(presenceChannel);
       void supabase.removeChannel(dataChannel);
+      void supabase.removeChannel(gameBroadcastChannel);
     };
   }, [roomCode, kind]);
 }

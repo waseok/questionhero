@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { buildGameSnapshotFromStoreState } from "../lib/gameSnapshot";
 import { randomRoomCode } from "../lib/roomCode";
 import { getSupabase, isSupabaseConfigured } from "../lib/supabaseClient";
@@ -21,6 +21,17 @@ export function OnlinePortal() {
   const setRoomError = useRoomStore((s) => s.setRoomError);
   const roomError = useRoomStore((s) => s.roomError);
   const myName = myNameInput.trim();
+
+  /** 공유 링크 `?room=1234`로 들어오면 함께하기 입력칸에 자동 반영 */
+  useEffect(() => {
+    try {
+      const raw = new URLSearchParams(window.location.search).get("room");
+      const c = raw?.replace(/\D/g, "").slice(0, 4) ?? "";
+      if (/^\d{4}$/.test(c)) setJoinInput(c);
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const handleCreateOnline = async () => {
     setRoomError(null);

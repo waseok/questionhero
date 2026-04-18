@@ -1,3 +1,4 @@
+import { buildJoinGameUrl } from "../lib/joinLink";
 import { TOTAL_GAME_ROUNDS, useGameStore } from "../store/gameStore";
 import { useRoomStore } from "../store/roomStore";
 
@@ -26,6 +27,14 @@ export function AppHeader({ variant }: Props) {
 
   const copyCode = () => {
     if (roomCode) void navigator.clipboard.writeText(roomCode);
+  };
+
+  const copyJoinLink = () => {
+    if (!roomCode) return;
+    const link = buildJoinGameUrl(roomCode);
+    void navigator.clipboard.writeText(link).catch(() => {
+      window.prompt("아래 링크를 복사해 친구에게 보내세요.", link);
+    });
   };
 
   const isDark = variant === "dark";
@@ -60,17 +69,30 @@ export function AppHeader({ variant }: Props) {
         </p>
         <div className="flex flex-wrap items-center gap-2.5">
           {kind === "online" && roomCode ? (
-            <button
-              type="button"
-              onClick={() => void copyCode()}
-              className={
-                isDark
-                  ? "rounded-full border border-amber-400/55 bg-black/25 px-4 py-2 text-sm font-extrabold text-amber-100 md:px-5 md:text-base"
-                  : "rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-extrabold text-blue-900 md:px-5 md:text-base"
-              }
-            >
-              방 {roomCode} · 복사
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => void copyCode()}
+                className={
+                  isDark
+                    ? "rounded-full border border-amber-400/55 bg-black/25 px-4 py-2 text-sm font-extrabold text-amber-100 md:px-5 md:text-base"
+                    : "rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-extrabold text-blue-900 md:px-5 md:text-base"
+                }
+              >
+                방 {roomCode} · 복사
+              </button>
+              <button
+                type="button"
+                onClick={() => void copyJoinLink()}
+                className={
+                  isDark
+                    ? "rounded-full border border-emerald-400/50 bg-emerald-950/35 px-4 py-2 text-sm font-extrabold text-emerald-50 md:px-5 md:text-base"
+                    : "rounded-full border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-extrabold text-emerald-900 md:px-5 md:text-base"
+                }
+              >
+                게임 링크 복사
+              </button>
+            </>
           ) : null}
           {kind === "local" ? (
             <span className={isDark ? "text-xs font-bold text-amber-100/90" : "text-xs font-bold text-stone-600"}>오프라인 연습</span>
