@@ -8,9 +8,16 @@ import type { GameSnapshot } from "../types/game";
 
 type StoreSlice = GameSnapshot & Record<string, unknown>;
 
+const isSubscribed = (status: string) => status === "SUBSCRIBED";
+
 /**
  * 온라인 방일 때만 Supabase `rooms` 행과 실시간 동기화합니다.
  * 로컬 연습(`kind === 'local'`) 또는 포털에서는 아무 것도 하지 않습니다.
+ *
+ * Presence와 postgres_changes를 **서로 다른 채널**로 분리합니다.
+ * 한 채널에 둘을 같이 두면, `rooms` 테이블에 Realtime이 안 붙었거나
+ * 서버 필터 검증에 실패할 때 전체 구독이 실패해 `track()`이 호출되지 않고
+ * 접속자 수가 영원히 0으로 남는 문제가 생길 수 있습니다.
  */
 export function useGameRoomSync(roomCode: string | null, kind: RoomConnectionKind) {
   const pushTimerRef = useRef(0);
@@ -27,20 +34,47 @@ export function useGameRoomSync(roomCode: string | null, kind: RoomConnectionKin
     lastRemoteJsonRef.current = "";
 
     let cancelled = false;
-    const channel = supabase.channel(`room_sync_${roomCode}`);
     const roomStore = useRoomStore.getState();
+    const clientId = roomStore.myClientId;
+
+    /** 접속자 표시만 담당 (postgres와 독립적으로 SUBSCRIBED 보장) */
+    const presenceChannel = supabase.channel(`room_presence_${roomCode}`, {
+      config: {
+        presence: {
+          key: clientId,
+        },
+      },
+    });
 
     const syncPresenceUsers = () => {
-      const state = channel.presenceState<{ name?: string; clientId?: string }>();
+      const state = presenceChannel.presenceState<{ name?: string; clientId?: string }>();
       const flattened = Object.values(state)
         .flat()
         .map((p) => ({ clientId: p.clientId ?? "?", name: (p.name ?? "").trim() }))
         .filter((u) => u.name.length > 0);
       const uniqMap = new Map<string, { clientId: string; name: string }>();
       for (const u of flattened) uniqMap.set(`${u.clientId}:${u.name}`, u);
-      roomStore.setConnectedUsers(Array.from(uniqMap.values()));
+      useRoomStore.getState().setConnectedUsers(Array.from(uniqMap.values()));
     };
 
+    presenceChannel
+      .on("presence", { event: "sync" }, syncPresenceUsers)
+      .on("presence", { event: "join" }, syncPresenceUsers)
+      .on("presence", { event: "leave" }, syncPresenceUsers);
+
+    void presenceChannel.subscribe(async (status) => {
+      if (!isSubscribed(status)) return;
+      const rs = useRoomStore.getState();
+      await presenceChannel.track({
+        name: rs.myName.trim() || "이름없음",
+        clientId: rs.myClientId,
+        onlineAt: new Date().toISOString(),
+      });
+      syncPresenceUsers();
+    });
+
+    /** 게임 상태 DB 변경 구독만 담당 */
+    const dataChannel = supabase.channel(`room_data_${roomCode}`);
     const applyRemote = (snap: GameSnapshot) => {
       const json = JSON.stringify(snap);
       if (json === lastRemoteJsonRef.current) return;
@@ -62,7 +96,7 @@ export function useGameRoomSync(roomCode: string | null, kind: RoomConnectionKin
 
     void loadInitial();
 
-    channel.on(
+    dataChannel.on(
       "postgres_changes",
       { event: "UPDATE", schema: "public", table: "rooms", filter: `code=eq.${roomCode}` },
       (payload) => {
@@ -70,18 +104,8 @@ export function useGameRoomSync(roomCode: string | null, kind: RoomConnectionKin
         if (row?.game_state) applyRemote(row.game_state);
       },
     );
-    channel.on("presence", { event: "sync" }, syncPresenceUsers);
-    channel.on("presence", { event: "join" }, syncPresenceUsers);
-    channel.on("presence", { event: "leave" }, syncPresenceUsers);
-    void channel.subscribe(async (status) => {
-      if (status === "SUBSCRIBED") {
-        await channel.track({
-          name: roomStore.myName || "이름없음",
-          clientId: roomStore.myClientId,
-          onlineAt: new Date().toISOString(),
-        });
-      }
-    });
+
+    void dataChannel.subscribe();
 
     const unsub = useGameStore.subscribe((state) => {
       if (!pushEnabledRef.current || skipPushRef.current) return;
@@ -97,9 +121,10 @@ export function useGameRoomSync(roomCode: string | null, kind: RoomConnectionKin
       cancelled = true;
       pushEnabledRef.current = false;
       window.clearTimeout(pushTimerRef.current);
-      roomStore.setConnectedUsers([]);
+      useRoomStore.getState().setConnectedUsers([]);
       unsub();
-      void supabase.removeChannel(channel);
+      void supabase.removeChannel(presenceChannel);
+      void supabase.removeChannel(dataChannel);
     };
   }, [roomCode, kind]);
 }
