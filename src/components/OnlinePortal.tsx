@@ -22,19 +22,6 @@ export function OnlinePortal() {
   const roomError = useRoomStore((s) => s.roomError);
   const myName = myNameInput.trim();
 
-  const assignSeatToName = (name: string) => {
-    const store = useGameStore.getState();
-    const players = store.players;
-    const already = players.find((p) => p.name.trim() === name);
-    if (already) return;
-    const empty = players.find((p, i) => {
-      const v = p.name.trim();
-      return !v || v === `플레이어${i + 1}`;
-    });
-    if (!empty) return;
-    store.setPlayerName(empty.id, name);
-  };
-
   const handleCreateOnline = async () => {
     setRoomError(null);
     if (myName.length < 2) {
@@ -49,7 +36,6 @@ export function OnlinePortal() {
     if (!supabase) return;
     setBusy(true);
     useGameStore.getState().resetGame();
-    assignSeatToName(myName);
     setMyName(myName);
     const snapshot = buildGameSnapshotFromStoreState(useGameStore.getState() as unknown as StoreSlice);
 
@@ -92,7 +78,6 @@ export function OnlinePortal() {
     }
     try {
       useGameStore.getState().applyRemoteSnapshot(data.game_state as GameSnapshot);
-      assignSeatToName(myName);
       setMyName(myName);
     } catch {
       setRoomError("방 데이터를 읽는 데 실패했습니다.");

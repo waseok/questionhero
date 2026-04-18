@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { buildGameSnapshotFromStoreState } from "../lib/gameSnapshot";
+import { applyJoinOrderToSetupPlayers, sortConnectedByJoinOrder } from "../lib/onlineSeatOrder";
 import { getSupabase } from "../lib/supabaseClient";
 import { useGameStore } from "../store/gameStore";
 import type { RoomConnectionKind } from "../store/roomStore";
@@ -47,14 +48,18 @@ export function useGameRoomSync(roomCode: string | null, kind: RoomConnectionKin
     });
 
     const syncPresenceUsers = () => {
-      const state = presenceChannel.presenceState<{ name?: string; clientId?: string }>();
-      const flattened = Object.values(state)
+      const state = presenceChannel.presenceState<{ name?: string; clientId?: string; onlineAt?: string }>();
+      const rows = Object.values(state)
         .flat()
-        .map((p) => ({ clientId: p.clientId ?? "?", name: (p.name ?? "").trim() }))
+        .map((p) => ({
+          clientId: (p.clientId ?? "?").trim() || "?",
+          name: (p.name ?? "").trim(),
+          onlineAt: typeof p.onlineAt === "string" && p.onlineAt.length > 0 ? p.onlineAt : "2999-12-31T23:59:59.999Z",
+        }))
         .filter((u) => u.name.length > 0);
-      const uniqMap = new Map<string, { clientId: string; name: string }>();
-      for (const u of flattened) uniqMap.set(`${u.clientId}:${u.name}`, u);
-      useRoomStore.getState().setConnectedUsers(Array.from(uniqMap.values()));
+      const sorted = sortConnectedByJoinOrder(rows);
+      useRoomStore.getState().setConnectedUsers(sorted);
+      applyJoinOrderToSetupPlayers(sorted);
     };
 
     presenceChannel
@@ -82,6 +87,10 @@ export function useGameRoomSync(roomCode: string | null, kind: RoomConnectionKin
       skipPushRef.current = true;
       useGameStore.getState().applyRemoteSnapshot(snap);
       skipPushRef.current = false;
+      /** 원격이 setup 플레이어 이름을 덮은 직후, 현재 Presence 순서로 다시 맞춤 */
+      if (snap.step === "setup") {
+        queueMicrotask(() => syncPresenceUsers());
+      }
     };
 
     const loadInitial = async () => {

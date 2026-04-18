@@ -6,7 +6,6 @@ export function SetupScreen() {
   const kind = useRoomStore((s) => s.kind);
   const roomCode = useRoomStore((s) => s.roomCode);
   const myClientId = useRoomStore((s) => s.myClientId);
-  const myName = useRoomStore((s) => s.myName.trim());
   const connectedUsers = useRoomStore((s) => s.connectedUsers);
   const players = useGameStore((s) => s.players);
   const gameMode = useGameStore((s) => s.gameMode);
@@ -25,6 +24,9 @@ export function SetupScreen() {
             <p className="mt-3 rounded-xl border border-blue-200 bg-blue-50/90 px-3 py-2 text-sm font-semibold text-blue-950">
               같은 방에서 진행 중입니다. 방 코드 <span className="tabular-nums">{roomCode}</span>를 다른 기기에 입력하면 함께할 수 있어요.
             </p>
+            <p className="mt-1 text-xs font-medium text-blue-900/80">
+              접속한 순서대로 <strong>P1</strong>부터 자리가 잡히며, 첫 번째로 들어온 분이 P1(첫 스토리텔러)입니다.
+            </p>
             <div className="mt-2 rounded-xl border border-emerald-200 bg-emerald-50/90 px-3 py-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-xs font-bold uppercase tracking-wide text-emerald-900/80">현재 접속자</p>
@@ -34,8 +36,9 @@ export function SetupScreen() {
               </div>
               {connectedUsers.length > 0 ? (
                 <ul className="mt-2 flex flex-wrap gap-1.5">
-                  {connectedUsers.map((u) => {
-                    const isMe = u.clientId === myClientId || (myName.length > 0 && u.name === myName);
+                  {connectedUsers.map((u, orderIdx) => {
+                    const seat = orderIdx + 1;
+                    const isMe = u.clientId === myClientId;
                     return (
                       <li
                         key={`${u.clientId}-${u.name}`}
@@ -43,6 +46,7 @@ export function SetupScreen() {
                           isMe ? "border-indigo-300 bg-indigo-100 text-indigo-900" : "border-emerald-200 bg-white/85 text-emerald-950"
                         }`}
                       >
+                        <span className="mr-1 tabular-nums text-[0.65rem] opacity-80">P{seat}</span>
                         {isMe ? "나 · " : ""}
                         {u.name}
                       </li>
