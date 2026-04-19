@@ -28,12 +28,11 @@ function App() {
     return <OnlinePortal />;
   }
 
-  const lightShell = step === "setup";
-
   return (
-    <div className={lightShell ? "min-h-screen bg-white text-[var(--game-ink)]" : "min-h-screen"}>
+    <div className="min-h-screen bg-white text-[var(--game-ink)]">
       <main className="mx-auto max-w-6xl px-4 pb-10 pt-4 md:px-6 md:pb-14 md:pt-6">
-        <AppHeader variant={lightShell ? "light" : "dark"} />
+        {/* 게임 중에도 밝은 헤더: 로고 PNG 흰 바탕이 보라 헤더 위에서 덜 튐 */}
+        <AppHeader variant="light" />
 
         <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
           <section key={step} className="step-fade">

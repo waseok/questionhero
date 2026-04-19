@@ -17,13 +17,8 @@ body {
   margin: 0;
   font-family: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
   color: var(--game-ink);
-  background-color: #120e0a;
-  background-image:
-    radial-gradient(ellipse 100% 70% at 50% -15%, rgba(90, 60, 120, 0.35) 0%, transparent 55%),
-    radial-gradient(ellipse 60% 45% at 100% 0%, rgba(180, 120, 60, 0.12) 0%, transparent 45%),
-    radial-gradient(ellipse 50% 40% at 0% 100%, rgba(40, 80, 120, 0.15) 0%, transparent 50%),
-    linear-gradient(165deg, #1f1812 0%, #14100c 45%, #0c0a08 100%);
-  background-attachment: fixed;
+  /* 플레이 화면·포털 공통: 밝은 캔버스 (어두운 바디 + 흰 로고 PNG 조합으로 튀던 문제 완화) */
+  background-color: #ffffff;
   min-height: 100vh;
 }
 

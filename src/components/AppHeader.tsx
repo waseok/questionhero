@@ -73,8 +73,10 @@ export function AppHeader({ variant }: Props) {
             decoding="async"
             className={
               isDark
-                ? "block h-[4.25rem] w-auto max-w-[min(100%,320px)] object-contain object-left drop-shadow-[0_2px_6px_rgba(0,0,0,0.35)] md:h-[5.5rem] md:max-w-[min(100%,400px)]"
-                : "block h-[5.25rem] w-auto max-w-[min(100%,380px)] object-contain object-left md:h-[6.75rem] md:max-w-[min(100%,460px)]"
+                ? /* 다크 헤더용(레거시): 기존 높이의 2배 */
+                  "block h-[8.5rem] w-auto max-w-[min(100%,640px)] object-contain object-left drop-shadow-[0_2px_6px_rgba(0,0,0,0.35)] md:h-[11rem] md:max-w-[min(100%,800px)]"
+                : /* 라이트 헤더: 예전 다크 게임 헤더 로고(4.25rem/5.5rem) 대비 2배 크기 */
+                  "block h-[8.5rem] w-auto max-w-[min(100%,640px)] object-contain object-left md:h-[11rem] md:max-w-[min(100%,800px)]"
             }
           />
         </h1>
