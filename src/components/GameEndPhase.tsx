@@ -1,5 +1,6 @@
-import { PlayerToken } from "./PlayerToken";
+import { playUiSelect, resumeGameAudio } from "../lib/gameSfx";
 import { useGameStore } from "../store/gameStore";
+import { PlayerToken } from "./PlayerToken";
 
 export function GameEndPhase() {
   const players = useGameStore((s) => s.players);
@@ -29,7 +30,15 @@ export function GameEndPhase() {
           </li>
         ))}
       </ul>
-      <button type="button" className="game-btn-cta text-base" onClick={resetGame}>
+      <button
+        type="button"
+        className="game-btn-cta text-base"
+        onClick={() => {
+          resumeGameAudio();
+          playUiSelect();
+          resetGame();
+        }}
+      >
         새 게임
       </button>
     </section>

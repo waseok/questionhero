@@ -1,6 +1,7 @@
-import { PlayerToken } from "./PlayerToken";
+import { playUiConfirm, playUiSelect, resumeGameAudio } from "../lib/gameSfx";
 import { useGameStore } from "../store/gameStore";
 import { useRoomStore } from "../store/roomStore";
+import { PlayerToken } from "./PlayerToken";
 
 export function SetupScreen() {
   const kind = useRoomStore((s) => s.kind);
@@ -98,7 +99,11 @@ export function SetupScreen() {
                 ? "border-blue-900/50 bg-gradient-to-b from-sky-400 to-blue-700 text-white shadow-[0_4px_0_#1e3a5f]"
                 : "border-transparent bg-black/[0.06] text-[var(--game-ink-soft)] hover:bg-black/[0.09]"
             } disabled:cursor-not-allowed disabled:opacity-50`}
-            onClick={() => setMode("thoughtful")}
+            onClick={() => {
+              resumeGameAudio();
+              playUiSelect();
+              setMode("thoughtful");
+            }}
           >
             신중한 판단
           </button>
@@ -110,7 +115,11 @@ export function SetupScreen() {
                 ? "border-red-900/60 bg-gradient-to-b from-rose-500 to-red-700 text-white shadow-[0_4px_0_#7f1d1d]"
                 : "border-transparent bg-black/[0.06] text-[var(--game-ink-soft)] hover:bg-black/[0.09]"
             } disabled:cursor-not-allowed disabled:opacity-50`}
-            onClick={() => setMode("emergency")}
+            onClick={() => {
+              resumeGameAudio();
+              playUiSelect();
+              setMode("emergency");
+            }}
           >
             긴급 대응
           </button>
@@ -126,7 +135,11 @@ export function SetupScreen() {
         type="button"
         className="game-btn-cta text-base"
         disabled={!canStart || onlineAsGuest}
-        onClick={startGame}
+        onClick={() => {
+          resumeGameAudio();
+          playUiConfirm();
+          startGame();
+        }}
       >
         게임 시작
       </button>

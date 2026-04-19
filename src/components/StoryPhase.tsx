@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { PhaseCountdown } from "./PhaseCountdown";
+import { playUiConfirm, resumeGameAudio } from "../lib/gameSfx";
 import { useGameStore } from "../store/gameStore";
+import { PhaseCountdown } from "./PhaseCountdown";
 
 export function StoryPhase() {
   const situation = useGameStore((s) => s.situation);
@@ -47,7 +48,16 @@ export function StoryPhase() {
         placeholder="예: 복도 끝에서… (3문장 이내)"
       />
       <p className="text-sm font-semibold text-[var(--game-wood)]">글자 수: {situation.length} / 150</p>
-      <button type="button" className="game-btn-cta" disabled={!canNext} onClick={completeStoryStep}>
+      <button
+        type="button"
+        className="game-btn-cta"
+        disabled={!canNext}
+        onClick={() => {
+          resumeGameAudio();
+          playUiConfirm();
+          completeStoryStep();
+        }}
+      >
         다음 단계
       </button>
     </section>

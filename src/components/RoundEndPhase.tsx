@@ -1,5 +1,6 @@
-import { PlayerToken } from "./PlayerToken";
+import { playUiConfirm, resumeGameAudio } from "../lib/gameSfx";
 import { TOTAL_GAME_ROUNDS, useGameStore } from "../store/gameStore";
+import { PlayerToken } from "./PlayerToken";
 
 export function RoundEndPhase() {
   const players = useGameStore((s) => s.players);
@@ -41,7 +42,15 @@ export function RoundEndPhase() {
             </li>
           ))}
       </ul>
-      <button type="button" className="game-btn-indigo" onClick={nextRound}>
+      <button
+        type="button"
+        className="game-btn-indigo"
+        onClick={() => {
+          resumeGameAudio();
+          playUiConfirm();
+          nextRound();
+        }}
+      >
         다음 라운드 ({Math.min(currentRound + 1, TOTAL_GAME_ROUNDS)}/{TOTAL_GAME_ROUNDS})
       </button>
     </section>

@@ -1,5 +1,6 @@
-import { useGameStore } from "../store/gameStore";
 import { useState } from "react";
+import { playDiceLand, playDiceRollStart, playUiConfirm, resumeGameAudio } from "../lib/gameSfx";
+import { useGameStore } from "../store/gameStore";
 import { QuestionTokenBadge } from "./QuestionTokenBadge";
 
 export function QuestionPhase() {
@@ -14,9 +15,12 @@ export function QuestionPhase() {
 
   const handleRandomize = () => {
     if (questionTokensAssigned || isAssigning) return;
+    resumeGameAudio();
+    playDiceRollStart();
     setIsAssigning(true);
     window.setTimeout(() => {
       randomizeQuestionTokens();
+      playDiceLand();
       setIsAssigning(false);
     }, 1000);
   };
@@ -65,7 +69,16 @@ export function QuestionPhase() {
         })}
       </ul>
 
-      <button type="button" className="game-btn-cta" disabled={!canNext} onClick={completeQuestionsStep}>
+      <button
+        type="button"
+        className="game-btn-cta"
+        disabled={!canNext}
+        onClick={() => {
+          resumeGameAudio();
+          playUiConfirm();
+          completeQuestionsStep();
+        }}
+      >
         배정 완료
       </button>
     </section>

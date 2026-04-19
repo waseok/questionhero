@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { QUESTION_PROMPTS } from "../constants/questionTokens";
+import { playUiConfirm, playUiSelect, resumeGameAudio } from "../lib/gameSfx";
 import { useGameStore } from "../store/gameStore";
 import { PhaseCountdown } from "./PhaseCountdown";
 import { QuestionTokenBadge } from "./QuestionTokenBadge";
@@ -76,7 +77,11 @@ export function VotingPhase() {
                     type="radio"
                     className="h-4 w-4 accent-amber-600"
                     checked={winner === pick.playerId}
-                    onChange={() => setWinnerPlayer(pick.playerId)}
+                    onChange={() => {
+                      resumeGameAudio();
+                      playUiSelect();
+                      setWinnerPlayer(pick.playerId);
+                    }}
                   />
                   가장 도움이 된 질문으로 선택
                 </label>
@@ -99,7 +104,16 @@ export function VotingPhase() {
         </aside>
       </div>
 
-      <button type="button" className="game-btn-cta" disabled={!ready} onClick={completeVotingStep}>
+      <button
+        type="button"
+        className="game-btn-cta"
+        disabled={!ready}
+        onClick={() => {
+          resumeGameAudio();
+          playUiConfirm();
+          completeVotingStep();
+        }}
+      >
         투표 완료
       </button>
     </section>

@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DICE_DATA, flattenColorItems } from "../data/diceData";
+import {
+  playDiceLand,
+  playDiceRollStart,
+  playDiceTick,
+  playUiConfirm,
+  playUiSelect,
+  resumeGameAudio,
+} from "../lib/gameSfx";
 import { useGameStore } from "../store/gameStore";
 import type { DiceColor, DiceItem, DiceSelection } from "../types/game";
 
@@ -169,12 +177,15 @@ export function DicePhase() {
     if (rollLocked || rollInFlightRef.current) return;
     rollInFlightRef.current = true;
 
+    resumeGameAudio();
+    playDiceRollStart();
+
     clearRollTimers();
     setIsRolling(true);
 
     const tickMs = rollDurationMs < 600 ? 200 : 85;
 
-    /** 매 tick마다 후보 풀에서 임의 면을 뽑아 화면 갱신 */
+    /** 매 tick마다 후보 풀에서 임의 면을 뽑아 화면 갱신 + 아주 작은 슬롯 틱음 */
     tickRef.current = setInterval(() => {
       const pools = buildPoolsFromStore();
       setSpinFaces({
@@ -182,6 +193,7 @@ export function DicePhase() {
         red: randomPick(pools.red),
         yellow: randomPick(pools.yellow),
       });
+      playDiceTick();
     }, tickMs);
 
     finishRef.current = setTimeout(() => {
@@ -195,6 +207,7 @@ export function DicePhase() {
       } else {
         rollThemeDice();
       }
+      playDiceLand();
       setSpinFaces({});
       setIsRolling(false);
       setRollLocked(true);
@@ -272,7 +285,11 @@ export function DicePhase() {
                   <select
                     className="rounded border px-2 py-1 text-sm"
                     value={themeIndex[color]}
-                    onChange={(e) => setTheme(color, Number(e.target.value))}
+                    onChange={(e) => {
+                      resumeGameAudio();
+                      playUiSelect();
+                      setTheme(color, Number(e.target.value));
+                    }}
                     disabled={isRolling || rollLocked}
                   >
                     {DICE_DATA[color].map((_, i) => (
@@ -306,7 +323,16 @@ export function DicePhase() {
           })}
         </div>
       )}
-      <button type="button" className="game-btn-cta" onClick={completeDiceStep} disabled={!ready}>
+      <button
+        type="button"
+        className="game-btn-cta"
+        disabled={!ready}
+        onClick={() => {
+          resumeGameAudio();
+          playUiConfirm();
+          completeDiceStep();
+        }}
+      >
         다음 단계
       </button>
     </section>
