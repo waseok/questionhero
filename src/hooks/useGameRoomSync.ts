@@ -100,9 +100,6 @@ export function useGameRoomSync(roomCode: string | null, kind: RoomConnectionKin
       skipPushRef.current = true;
       useGameStore.getState().applyRemoteSnapshot(snap);
       skipPushRef.current = false;
-      if (snap.step === "setup") {
-        queueMicrotask(() => syncPresenceUsers());
-      }
     };
 
     const gameBroadcastChannel = supabase.channel(`room_game_${roomCode}`);
@@ -115,11 +112,15 @@ export function useGameRoomSync(roomCode: string | null, kind: RoomConnectionKin
     const loadInitial = async () => {
       const { data, error } = await supabase.from("rooms").select("game_state").eq("code", roomCode).maybeSingle();
       if (cancelled) return;
-      if (error || !data?.game_state) return;
-      applyRemote(data.game_state as GameSnapshot);
-      queueMicrotask(() => {
-        if (!cancelled) pushEnabledRef.current = true;
-      });
+      if (!error && data?.game_state) {
+        applyRemote(data.game_state as GameSnapshot);
+      }
+      if (!cancelled) {
+        pushEnabledRef.current = true;
+        // presence 구독과 loadInitial 사이의 race condition 해소:
+        // DB 스냅샷 적용 후 현재 presence 상태를 덮어씌워 이름이 기본값으로 리셋되는 것을 방지
+        syncPresenceUsers();
+      }
     };
 
     void loadInitial();
