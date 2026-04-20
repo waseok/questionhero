@@ -9,6 +9,7 @@ import {
   resumeGameAudio,
 } from "../lib/gameSfx";
 import { useGameStore } from "../store/gameStore";
+import { useRoomStore } from "../store/roomStore";
 import type { DiceColor, DiceItem, DiceSelection } from "../types/game";
 
 /** 색별 카드 제목·구역 색·그리드에서 «뽑힌 면» 강조 */
@@ -129,11 +130,21 @@ export function DicePhase() {
   const mode = useGameStore((s) => s.gameMode);
   const diceSelection = useGameStore((s) => s.diceSelection);
   const themeIndex = useGameStore((s) => s.themeIndex);
+  const storytellerId = useGameStore((s) => s.storytellerId);
+  const players = useGameStore((s) => s.players);
   const setTheme = useGameStore((s) => s.setTheme);
   const rollThemeDice = useGameStore((s) => s.rollThemeDice);
   const autoRollDice = useGameStore((s) => s.autoRollDice);
-
   const completeDiceStep = useGameStore((s) => s.completeDiceStep);
+
+  const kind = useRoomStore((s) => s.kind);
+  const myClientId = useRoomStore((s) => s.myClientId);
+  const connectedUsers = useRoomStore((s) => s.connectedUsers);
+  const myIndex = connectedUsers.findIndex((u) => u.clientId === myClientId);
+  const myPlayerId = myIndex >= 0 ? `p${myIndex + 1}` : null;
+  const isOnline = kind === "online";
+  const isStoryteller = !isOnline || myPlayerId === storytellerId;
+  const storytellerName = players.find((p) => p.id === storytellerId)?.name ?? storytellerId;
 
   const [isRolling, setIsRolling] = useState(false);
   const [rollLocked, setRollLocked] = useState(false);
@@ -227,13 +238,20 @@ export function DicePhase() {
   return (
     <section className="game-card space-y-4 p-6 md:p-7">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-        <h2 className="game-title text-2xl leading-tight text-[var(--game-ink)]">주사위 선택 단계</h2>
+        <div>
+          <h2 className="game-title text-2xl leading-tight text-[var(--game-ink)]">주사위 선택 단계</h2>
+          {isOnline && !isStoryteller && (
+            <p className="mt-1 text-xs font-semibold text-amber-700">
+              스토리텔러 <strong>{storytellerName}</strong> 님이 주사위를 굴리고 있습니다.
+            </p>
+          )}
+        </div>
         {mode === "emergency" ? (
           <button
             type="button"
             className={`game-btn-ruby shrink-0 text-sm sm:mt-0.5 ${isRolling ? "animate-pulse" : ""}`}
             onClick={startRollSequence}
-            disabled={isRolling || rollLocked}
+            disabled={isRolling || rollLocked || !isStoryteller}
           >
             {isRolling ? "🎲 굴리는 중…" : rollLocked ? "✅ 결과 고정됨" : "🎲 주사위 던지기"}
           </button>
@@ -242,7 +260,7 @@ export function DicePhase() {
             type="button"
             className={`game-btn-indigo shrink-0 text-sm sm:mt-0.5 ${isRolling ? "animate-pulse" : ""}`}
             onClick={startRollSequence}
-            disabled={isRolling || rollLocked}
+            disabled={isRolling || rollLocked || !isStoryteller}
           >
             {isRolling ? "🎲 굴리는 중…" : rollLocked ? "✅ 결과 고정됨" : "🎲 테마 기준 주사위 굴리기"}
           </button>
@@ -262,11 +280,11 @@ export function DicePhase() {
           <button
             type="button"
             className={`dice-action-board w-full rounded-xl border-2 border-dashed border-red-300 bg-red-50 px-4 py-6 text-center ${isShaking ? "dice-shake" : ""} ${isRolling ? "animate-pulse" : ""}`}
-            onMouseDown={() => !rollLocked && setIsShaking(true)}
+            onMouseDown={() => !rollLocked && isStoryteller && setIsShaking(true)}
             onMouseUp={() => setIsShaking(false)}
             onMouseLeave={() => setIsShaking(false)}
             onClick={handlePhysicalRoll}
-            disabled={isRolling || rollLocked}
+            disabled={isRolling || rollLocked || !isStoryteller}
           >
             <p className="text-base font-bold">🖐️ 눌러서 흔들고 놓으면 주사위 굴림</p>
             <p className="mt-1 text-sm font-medium text-[var(--game-ink-soft)]">{isRolling ? "3개 주사위 회전 중…" : rollLocked ? "결과가 고정되었습니다" : "실제로 굴리는 액션"}</p>
@@ -290,7 +308,7 @@ export function DicePhase() {
                       playUiSelect();
                       setTheme(color, Number(e.target.value));
                     }}
-                    disabled={isRolling || rollLocked}
+                    disabled={isRolling || rollLocked || !isStoryteller}
                   >
                     {DICE_DATA[color].map((_, i) => (
                       <option key={i} value={i}>
@@ -326,14 +344,14 @@ export function DicePhase() {
       <button
         type="button"
         className="game-btn-cta"
-        disabled={!ready}
+        disabled={!ready || !isStoryteller}
         onClick={() => {
           resumeGameAudio();
           playUiConfirm();
           completeDiceStep();
         }}
       >
-        다음 단계
+        {isStoryteller ? "다음 단계" : `${storytellerName} 님이 진행 중`}
       </button>
     </section>
   );

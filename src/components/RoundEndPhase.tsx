@@ -1,5 +1,6 @@
 import { playUiConfirm, resumeGameAudio } from "../lib/gameSfx";
 import { TOTAL_GAME_ROUNDS, useGameStore } from "../store/gameStore";
+import { useRoomStore } from "../store/roomStore";
 import { PlayerToken } from "./PlayerToken";
 
 export function RoundEndPhase() {
@@ -10,6 +11,10 @@ export function RoundEndPhase() {
   const currentRound = useGameStore((s) => s.currentRound);
   const winnerName = players.find((p) => p.id === winner)?.name ?? "-";
   const showCoinEffect = Boolean(winner);
+
+  const kind = useRoomStore((s) => s.kind);
+  const isHost = useRoomStore((s) => s.isHost);
+  const canAdvance = kind !== "online" || isHost;
 
   return (
     <section className="game-card space-y-4 p-6 md:p-7">
@@ -42,17 +47,23 @@ export function RoundEndPhase() {
             </li>
           ))}
       </ul>
-      <button
-        type="button"
-        className="game-btn-indigo"
-        onClick={() => {
-          resumeGameAudio();
-          playUiConfirm();
-          nextRound();
-        }}
-      >
-        다음 라운드 ({Math.min(currentRound + 1, TOTAL_GAME_ROUNDS)}/{TOTAL_GAME_ROUNDS})
-      </button>
+      {canAdvance ? (
+        <button
+          type="button"
+          className="game-btn-indigo"
+          onClick={() => {
+            resumeGameAudio();
+            playUiConfirm();
+            nextRound();
+          }}
+        >
+          다음 라운드 ({Math.min(currentRound + 1, TOTAL_GAME_ROUNDS)}/{TOTAL_GAME_ROUNDS})
+        </button>
+      ) : (
+        <p className="rounded-xl border border-blue-200 bg-blue-50/90 px-3 py-2 text-center text-sm font-semibold text-blue-950">
+          방장이 다음 라운드를 시작합니다.
+        </p>
+      )}
     </section>
   );
 }

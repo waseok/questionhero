@@ -96,9 +96,29 @@ export function useGameRoomSync(roomCode: string | null, kind: RoomConnectionKin
     const applyRemote = (snap: GameSnapshot) => {
       const json = JSON.stringify(snap);
       if (json === lastRemoteJsonRef.current) return;
-      lastRemoteJsonRef.current = json;
+
+      // 투표 단계에서 내가 입력 중인 답변이 원격 스냅샷에 덮어씌워지는 것을 방지
+      let mergedSnap = snap;
+      if (snap.step === "voting") {
+        const { myClientId, connectedUsers } = useRoomStore.getState();
+        const myIndex = connectedUsers.findIndex((u) => u.clientId === myClientId);
+        if (myIndex >= 0) {
+          const myPlayerId = `p${myIndex + 1}`;
+          const localAnswer = useGameStore.getState().questionPicks.find((p) => p.playerId === myPlayerId)?.answer ?? "";
+          if (localAnswer) {
+            mergedSnap = {
+              ...snap,
+              questionPicks: snap.questionPicks.map((pick) =>
+                pick.playerId === myPlayerId ? { ...pick, answer: localAnswer } : pick,
+              ),
+            };
+          }
+        }
+      }
+
+      lastRemoteJsonRef.current = JSON.stringify(mergedSnap);
       skipPushRef.current = true;
-      useGameStore.getState().applyRemoteSnapshot(snap);
+      useGameStore.getState().applyRemoteSnapshot(mergedSnap);
       skipPushRef.current = false;
     };
 
