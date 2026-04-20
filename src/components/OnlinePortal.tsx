@@ -48,6 +48,8 @@ export function OnlinePortal() {
     setBusy(true);
     useGameStore.getState().resetGame();
     setMyName(myName);
+    // 호스트(P1) 이름을 초기 스냅샷에 즉시 반영 → presence 동기화 전에도 올바른 이름 표시
+    useGameStore.getState().setPlayerName("p1", myName);
     const snapshot = buildGameSnapshotFromStoreState(useGameStore.getState() as unknown as StoreSlice);
 
     for (let attempt = 0; attempt < 20; attempt++) {
@@ -101,7 +103,7 @@ export function OnlinePortal() {
 
   return (
     <div className="min-h-screen bg-white text-[var(--game-ink)]">
-      <div className="mx-auto flex w-full max-w-xl flex-col items-center px-4 py-10 md:py-14">
+      <div className="mx-auto flex w-full max-w-2xl flex-col items-center px-4 py-10 md:py-14">
         <div className="flex w-full justify-center">
           <img
             src="/logo-question-hero.png"
@@ -140,28 +142,36 @@ export function OnlinePortal() {
           </p>
         ) : null}
 
-        <div className="mt-8 w-full space-y-4">
-          <button
-            type="button"
-            disabled={busy || myName.length < 2}
-            onClick={() => void handleCreateOnline()}
-            className="w-full rounded-2xl border-2 border-blue-900/40 bg-gradient-to-b from-sky-500 to-blue-700 py-4 text-lg font-extrabold text-white shadow-[0_6px_0_#1e3a5f] transition enabled:hover:brightness-105 disabled:opacity-60"
-          >
-            게임 만들기
-          </button>
-          <p className="text-center text-xs font-medium text-[var(--game-ink-soft)]">4자리 방 코드가 생성되어 친구에게 공유할 수 있습니다.</p>
+        {/* 만들기 / 함께하기 — 나란히 배치 */}
+        <div className="mt-6 grid w-full gap-4 sm:grid-cols-2">
+          {/* 게임 만들기 */}
+          <div className="flex flex-col rounded-2xl border-2 border-blue-200/70 bg-blue-50/80 p-5">
+            <p className="text-center text-sm font-extrabold text-blue-900">게임 만들기</p>
+            <p className="mt-1.5 flex-1 text-center text-xs font-medium text-blue-900/70">
+              4자리 방 코드가 생성됩니다. 코드를 친구에게 공유하면 함께할 수 있어요.
+            </p>
+            <button
+              type="button"
+              disabled={busy || myName.length < 2}
+              onClick={() => void handleCreateOnline()}
+              className="mt-4 w-full rounded-2xl border-2 border-blue-900/40 bg-gradient-to-b from-sky-500 to-blue-700 py-3.5 text-base font-extrabold text-white shadow-[0_5px_0_#1e3a5f] transition enabled:hover:brightness-105 disabled:opacity-60"
+            >
+              게임 만들기
+            </button>
+          </div>
 
-          <div className="rounded-2xl border-2 border-[var(--game-wood)]/25 bg-stone-50/90 p-4 shadow-inner">
-            <p className="text-center text-sm font-bold text-[var(--game-wood)]">게임 함께하기</p>
+          {/* 게임 함께하기 */}
+          <div className="flex flex-col rounded-2xl border-2 border-[var(--game-wood)]/25 bg-stone-50/90 p-5">
+            <p className="text-center text-sm font-extrabold text-[var(--game-wood)]">게임 함께하기</p>
             <label className="mt-3 block text-xs font-bold uppercase tracking-wide text-[var(--game-ink-soft)]">
               방 코드 (4자리)
               <input
                 inputMode="numeric"
                 maxLength={4}
-                placeholder="예: 4821"
+                placeholder="4821"
                 value={joinInput}
                 onChange={(e) => setJoinInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                className="mt-1.5 w-full rounded-xl border-2 border-[var(--game-wood)]/25 bg-white px-3 py-3 text-center text-2xl font-black tracking-[0.35em] text-[var(--game-ink)] outline-none ring-amber-400/30 focus:border-amber-500/50 focus:ring-2"
+                className="mt-1.5 w-full rounded-xl border-2 border-[var(--game-wood)]/25 bg-white px-3 py-2.5 text-center text-2xl font-black tracking-[0.35em] text-[var(--game-ink)] outline-none ring-amber-400/30 focus:border-amber-500/50 focus:ring-2"
               />
             </label>
             <button
@@ -173,20 +183,20 @@ export function OnlinePortal() {
               입장하기
             </button>
           </div>
-
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => {
-              setRoomError(null);
-              useGameStore.getState().resetGame();
-              enterLocalPractice();
-            }}
-            className="w-full rounded-2xl border-2 border-dashed border-[var(--game-wood)]/35 py-3 text-sm font-bold text-[var(--game-ink-soft)] transition hover:border-[var(--game-wood)]/55 hover:bg-stone-100/80"
-          >
-            오프라인으로 연습하기 (방 없이 이 기기만)
-          </button>
         </div>
+
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => {
+            setRoomError(null);
+            useGameStore.getState().resetGame();
+            enterLocalPractice();
+          }}
+          className="mt-4 w-full rounded-2xl border-2 border-dashed border-[var(--game-wood)]/35 py-3 text-sm font-bold text-[var(--game-ink-soft)] transition hover:border-[var(--game-wood)]/55 hover:bg-stone-100/80"
+        >
+          오프라인으로 연습하기 (방 없이 이 기기만)
+        </button>
       </div>
     </div>
   );

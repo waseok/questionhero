@@ -77,9 +77,10 @@ export function SetupScreen() {
               <label className="min-w-0 flex-1 text-xs font-bold uppercase tracking-wide text-[var(--game-ink-soft)]">
                 {p.id}
                 <input
-                  className="mt-1.5 w-full rounded-lg border-2 border-[var(--game-wood)]/25 bg-white/90 px-3 py-2 text-sm font-semibold normal-case tracking-normal text-[var(--game-ink)] outline-none ring-amber-400/30 focus:border-amber-500/60 focus:ring-2"
+                  className="mt-1.5 w-full rounded-lg border-2 border-[var(--game-wood)]/25 bg-white/90 px-3 py-2 text-sm font-semibold normal-case tracking-normal text-[var(--game-ink)] outline-none ring-amber-400/30 focus:border-amber-500/60 focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50"
                   value={p.name}
                   placeholder="이름 입력"
+                  disabled={onlineAsGuest}
                   onChange={(e) => setPlayerName(p.id, e.target.value)}
                 />
               </label>

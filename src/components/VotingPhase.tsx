@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { QUESTION_PROMPTS } from "../constants/questionTokens";
 import { playUiConfirm, playUiSelect, resumeGameAudio } from "../lib/gameSfx";
 import { useGameStore } from "../store/gameStore";
+import { useRoomStore } from "../store/roomStore";
 import { PhaseCountdown } from "./PhaseCountdown";
 import { QuestionTokenBadge } from "./QuestionTokenBadge";
 
@@ -12,11 +13,20 @@ export function VotingPhase() {
   const players = useGameStore((s) => s.players);
   const picks = useGameStore((s) => s.questionPicks);
   const winner = useGameStore((s) => s.winnerPlayerId);
+  const storytellerId = useGameStore((s) => s.storytellerId);
   const currentRound = useGameStore((s) => s.currentRound);
   const setAnswer = useGameStore((s) => s.setAnswer);
   const setWinnerPlayer = useGameStore((s) => s.setWinnerPlayer);
   const completeVotingStep = useGameStore((s) => s.completeVotingStep);
   const ready = Boolean(winner) && picks.every((p) => p.answer.trim().length > 0);
+
+  const kind = useRoomStore((s) => s.kind);
+  const myClientId = useRoomStore((s) => s.myClientId);
+  const connectedUsers = useRoomStore((s) => s.connectedUsers);
+  const myIndex = connectedUsers.findIndex((u) => u.clientId === myClientId);
+  const myPlayerId = myIndex >= 0 ? `p${myIndex + 1}` : null;
+  const isOnline = kind === "online";
+  const isStoryteller = !isOnline || myPlayerId === storytellerId;
   const [timeUp, setTimeUp] = useState(false);
   const readyRef = useRef(ready);
   readyRef.current = ready;
@@ -67,17 +77,20 @@ export function VotingPhase() {
                   <QuestionTokenBadge type={pick.type} size="sm" />
                 </div>
                 <textarea
-                  className="mt-3 min-h-[88px] w-full rounded-xl border-2 border-[var(--game-wood)]/25 bg-white/90 p-3 text-sm text-[var(--game-ink)] outline-none ring-amber-400/25 focus:border-amber-500/50 focus:ring-2"
-                  placeholder="스토리텔러에게 할 질문을 입력하세요"
+                  className="mt-3 min-h-[88px] w-full rounded-xl border-2 border-[var(--game-wood)]/25 bg-white/90 p-3 text-sm text-[var(--game-ink)] outline-none ring-amber-400/25 focus:border-amber-500/50 focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60"
+                  placeholder={isOnline && pick.playerId !== myPlayerId ? "다른 플레이어가 입력 중…" : "스토리텔러에게 할 질문을 입력하세요"}
                   value={pick.answer}
                   onChange={(e) => setAnswer(pick.playerId, e.target.value)}
+                  disabled={isOnline && pick.playerId !== myPlayerId}
                 />
-                <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm font-semibold text-[var(--game-ink)]">
+                <label className={`mt-3 flex items-center gap-2 text-sm font-semibold text-[var(--game-ink)] ${isStoryteller ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}>
                   <input
                     type="radio"
                     className="h-4 w-4 accent-amber-600"
                     checked={winner === pick.playerId}
+                    disabled={!isStoryteller}
                     onChange={() => {
+                      if (!isStoryteller) return;
                       resumeGameAudio();
                       playUiSelect();
                       setWinnerPlayer(pick.playerId);
@@ -104,18 +117,24 @@ export function VotingPhase() {
         </aside>
       </div>
 
-      <button
-        type="button"
-        className="game-btn-cta"
-        disabled={!ready}
-        onClick={() => {
-          resumeGameAudio();
-          playUiConfirm();
-          completeVotingStep();
-        }}
-      >
-        투표 완료
-      </button>
+      {isOnline && !isStoryteller ? (
+        <p className="rounded-xl border border-amber-200 bg-amber-50/90 px-3 py-2 text-center text-sm font-semibold text-amber-950">
+          질문을 입력하면 스토리텔러가 투표합니다.
+        </p>
+      ) : (
+        <button
+          type="button"
+          className="game-btn-cta"
+          disabled={!ready}
+          onClick={() => {
+            resumeGameAudio();
+            playUiConfirm();
+            completeVotingStep();
+          }}
+        >
+          투표 완료
+        </button>
+      )}
     </section>
   );
 }

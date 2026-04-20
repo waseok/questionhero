@@ -96,13 +96,30 @@ export function useGameRoomSync(roomCode: string | null, kind: RoomConnectionKin
     const applyRemote = (snap: GameSnapshot) => {
       const json = JSON.stringify(snap);
       if (json === lastRemoteJsonRef.current) return;
-      lastRemoteJsonRef.current = json;
-      skipPushRef.current = true;
-      useGameStore.getState().applyRemoteSnapshot(snap);
-      skipPushRef.current = false;
-      if (snap.step === "setup") {
-        queueMicrotask(() => syncPresenceUsers());
+
+      // 투표 단계에서 내가 입력 중인 답변이 원격 스냅샷에 덮어씌워지는 것을 방지
+      let mergedSnap = snap;
+      if (snap.step === "voting") {
+        const { myClientId, connectedUsers } = useRoomStore.getState();
+        const myIndex = connectedUsers.findIndex((u) => u.clientId === myClientId);
+        if (myIndex >= 0) {
+          const myPlayerId = `p${myIndex + 1}`;
+          const localAnswer = useGameStore.getState().questionPicks.find((p) => p.playerId === myPlayerId)?.answer ?? "";
+          if (localAnswer) {
+            mergedSnap = {
+              ...snap,
+              questionPicks: snap.questionPicks.map((pick) =>
+                pick.playerId === myPlayerId ? { ...pick, answer: localAnswer } : pick,
+              ),
+            };
+          }
+        }
       }
+
+      lastRemoteJsonRef.current = JSON.stringify(mergedSnap);
+      skipPushRef.current = true;
+      useGameStore.getState().applyRemoteSnapshot(mergedSnap);
+      skipPushRef.current = false;
     };
 
     const gameBroadcastChannel = supabase.channel(`room_game_${roomCode}`);
@@ -115,11 +132,15 @@ export function useGameRoomSync(roomCode: string | null, kind: RoomConnectionKin
     const loadInitial = async () => {
       const { data, error } = await supabase.from("rooms").select("game_state").eq("code", roomCode).maybeSingle();
       if (cancelled) return;
-      if (error || !data?.game_state) return;
-      applyRemote(data.game_state as GameSnapshot);
-      queueMicrotask(() => {
-        if (!cancelled) pushEnabledRef.current = true;
-      });
+      if (!error && data?.game_state) {
+        applyRemote(data.game_state as GameSnapshot);
+      }
+      if (!cancelled) {
+        pushEnabledRef.current = true;
+        // presence 구독과 loadInitial 사이의 race condition 해소:
+        // DB 스냅샷 적용 후 현재 presence 상태를 덮어씌워 이름이 기본값으로 리셋되는 것을 방지
+        syncPresenceUsers();
+      }
     };
 
     void loadInitial();
